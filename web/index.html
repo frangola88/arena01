@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CasaIQ</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>CasaIQ</h1>
+    <nav class="abas">
+      <button class="aba ativa" data-aba="ingerir">Ingerir</button>
+      <button class="aba" data-aba="inventario">Inventário</button>
+      <button class="aba" data-aba="assistente">Assistente</button>
+      <button class="aba" data-aba="localizacoes">Localizações</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Aba Ingerir -->
+    <section id="aba-ingerir" class="painel ativo">
+      <h2>Adicionar foto ou vídeo</h2>
+      <form id="form-ingerir">
+        <label>
+          Localização:
+          <select id="select-localizacao" required></select>
+        </label>
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="input-foto"
+                 accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-matroska"
+                 hidden />
+          <p>Clique ou arraste uma <strong>foto</strong> ou <strong>vídeo</strong> aqui</p>
+          <p class="dica">Vídeo: 1 frame a cada 2 s, até 10 keyframes (configurável)</p>
+          <img id="preview" hidden />
+          <video id="preview-video" hidden controls muted playsinline></video>
+        </div>
+        <button type="submit" id="btn-processar" disabled>Processar</button>
+      </form>
+      <div id="status-ingestao"></div>
+      <div id="objetos-detectados" class="grid-objetos"></div>
+    </section>
+
+    <!-- Aba Inventário -->
+    <section id="aba-inventario" class="painel">
+      <h2>Inventário</h2>
+      <div class="filtros">
+        <input type="text" id="filtro-busca" placeholder="Buscar nome ou palavra-chave..." />
+        <select id="filtro-categoria"><option value="">Todas as categorias</option></select>
+        <select id="filtro-localizacao"><option value="">Todas as localizações</option></select>
+        <select id="filtro-estado">
+          <option value="">Qualquer estado</option>
+          <option value="novo">Novo</option>
+          <option value="bom">Bom</option>
+          <option value="regular">Regular</option>
+          <option value="ruim">Ruim</option>
+        </select>
+        <button id="btn-recarregar">Buscar</button>
+      </div>
+      <div id="grid-inventario" class="grid-objetos"></div>
+    </section>
+
+    <!-- Aba Assistente -->
+    <section id="aba-assistente" class="painel">
+      <h2>Assistente</h2>
+      <div class="exemplos">
+        <button class="chip">Onde está meu alicate?</button>
+        <button class="chip">Quantos cabos USB tenho?</button>
+        <button class="chip">Como trocar um chuveiro elétrico?</button>
+        <button class="chip">Liste todos os objetos da cozinha</button>
+      </div>
+      <div id="chat-mensagens" class="chat-mensagens"></div>
+      <form id="form-chat">
+        <input type="text" id="input-pergunta" placeholder="Faça uma pergunta..." autocomplete="off" />
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+
+    <!-- Aba Localizações -->
+    <section id="aba-localizacoes" class="painel">
+      <h2>Localizações</h2>
+      <form id="form-localizacao">
+        <input type="text" id="loc-nome" placeholder="Nome (ex: Caixa A)" required />
+        <input type="text" id="loc-tipo" placeholder="Tipo (caixa, gaveta, prateleira)" value="caixa" />
+        <input type="text" id="loc-comodo" placeholder="Cômodo (ex: Garagem)" />
+        <input type="text" id="loc-descricao" placeholder="Descrição (opcional)" />
+        <button type="submit">Adicionar</button>
+      </form>
+      <ul id="lista-localizacoes"></ul>
+    </section>
+  </main>
+
+  <!-- Modal de detalhes/edição -->
+  <div id="modal" class="modal-bg" hidden>
+    <div class="modal-conteudo">
+      <button class="fechar" id="modal-fechar">&times;</button>
+      <div id="modal-corpo"></div>
+    </div>
+  </div>
+
+  <footer id="rodape">
+    <span id="badge-modo">Modo: carregando…</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
