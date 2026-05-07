@@ -8,10 +8,13 @@ Estratégia em 2 etapas:
 Roteador: visão via Ollama por padrão.
 Claude é acionado se Ollama retornar lista vazia ou confiança média < LIMIAR.
 """
+import logging
 from PIL import Image
 from core.config import RECORTES_DIR
 from core.llm import chamar_visao, extrair_json
 from core.roteador import TarefaTexto
+
+_log = logging.getLogger("casaiq.agent_1")
 
 PROMPT_LISTA = """
 Analise a foto e liste TODOS os objetos visíveis, um por linha.
@@ -46,7 +49,7 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     Retorna lista de {"nome": str, "recorte_path": str}.
     Primeiro tenta Ollama; se lista vazia, aciona Claude (via roteador).
     """
-    print(f"[Agente 1] Segmentando: {caminho_foto}")
+    _log.info("segmentando", extra={"caminho_foto": caminho_foto, "foto_id": foto_id})
     imagem = Image.open(caminho_foto).convert("RGB")
 
     # Etapa A: lista (tenta local primeiro, Claude se lista vier vazia)
@@ -57,11 +60,15 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
                                             confianca_anterior=conf_anterior)
             dados = extrair_json(resposta)
             nomes = [o["nome"] for o in dados.get("objetos", []) if o.get("nome")]
-            print(f"[Agente 1] {len(nomes)} objeto(s) via {modelo} (tentativa {tentativa+1})")
+            _log.info("lista_objetos", extra={
+                "total": len(nomes), "modelo": modelo, "tentativa": tentativa + 1,
+            })
             if nomes:
                 break
         except Exception as e:
-            print(f"[Agente 1] ERRO tentativa {tentativa+1}: {e}")
+            _log.warning("erro_lista_objetos", extra={
+                "tentativa": tentativa + 1, "erro": str(e),
+            })
             if tentativa == 1:
                 return [{"nome": "objeto desconhecido", "recorte_path": caminho_foto}]
 

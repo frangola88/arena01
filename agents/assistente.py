@@ -8,6 +8,7 @@ Roteamento:
 Se Claude indisponível, Ollama assume. Se ambos falharem, retorna mensagem de erro.
 """
 import json
+import logging
 import re
 from core.llm import chamar_texto
 from core.roteador import TarefaTexto
@@ -15,6 +16,8 @@ from core.sql_safe import (
     MAX_PERGUNTA_CHARS, SQLInseguro,
     validar_select, garantir_limit, conectar_readonly, schema_para_prompt,
 )
+
+_log = logging.getLogger("casaiq.assistente")
 
 PROMPT_SQL = """
 Converta a pergunta em SQL SELECT para o banco de inventario domestico.
@@ -78,10 +81,10 @@ def chat(pergunta: str, db_conn) -> dict:
         finally:
             ro.close()
     except SQLInseguro as e:
-        print(f"[Assistente] SQL bloqueado pelo validador: {e}")
+        _log.warning("sql_bloqueado", extra={"motivo": str(e)})
         sql_gerado, resultados = "", []
     except Exception as e:
-        print(f"[Assistente] ERRO SQL: {e}")
+        _log.error("erro_sql", extra={"erro": str(e)}, exc_info=True)
         sql_gerado, resultados = "", []
 
     try:
@@ -90,7 +93,7 @@ def chat(pergunta: str, db_conn) -> dict:
         resposta, modelo_usado = chamar_texto(prompt_resp, tarefa=TarefaTexto.RESPOSTA_CHAT,
                                               max_tokens=1024)
     except Exception as e:
-        print(f"[Assistente] ERRO resposta: {e}")
+        _log.error("erro_resposta", extra={"erro": str(e)}, exc_info=True)
         resposta = f"Encontrei {len(resultados)} resultado(s). Erro ao formular resposta."
 
     try:
@@ -100,6 +103,6 @@ def chat(pergunta: str, db_conn) -> dict:
         )
         db_conn.commit()
     except Exception as e:
-        print(f"[Assistente] ERRO histórico: {e}")
+        _log.error("erro_historico", extra={"erro": str(e)})
 
     return {"resposta": resposta, "sql": sql_gerado, "resultados": resultados, "modelo": modelo_usado}

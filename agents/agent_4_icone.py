@@ -16,10 +16,13 @@ IMPORTANTE:
   - ddgs.images(query=...) é a assinatura correta do pacote 'ddgs' >= 9.0.0
 """
 import io
+import logging
 from pathlib import Path
 from PIL import Image, ImageDraw
 from typing import Optional
 from core.config import ICONES_DIR, ANTHROPIC_API_KEY, LIMIAR_CONFIANCA
+
+_log = logging.getLogger("casaiq.agent_4")
 
 
 CORES_GRUPO = {
@@ -45,7 +48,7 @@ def _recorte_como_icone(recorte_path: str, caminho_saida: str) -> bool:
         img.save(caminho_saida, "PNG")
         return True
     except Exception as e:
-        print(f"[Agente 4] Recorte falhou: {e}")
+        _log.warning("recorte_falhou", extra={"erro": str(e)})
         return False
 
 
@@ -74,12 +77,12 @@ def _buscar_imagem_web(nome: str, caminho_saida: str) -> bool:
                     img = Image.open(io.BytesIO(resp.content)).convert("RGB")
                     img = img.resize((256, 256), Image.LANCZOS)
                     img.save(caminho_saida, "PNG")
-                    print(f"[Agente 4] Imagem web: {item['image'][:60]}...")
+                    _log.info("imagem_web_baixada", extra={"url": item["image"][:60]})
                     return True
             except Exception:
                 continue
     except Exception as e:
-        print(f"[Agente 4] Busca web falhou: {e}")
+        _log.warning("busca_web_falhou", extra={"erro": str(e)})
     return False
 
 
@@ -126,7 +129,7 @@ def _executar_desenho_PIL(instrucoes: dict, caminho_saida: str) -> bool:
         img.save(caminho_saida, "PNG")
         return True
     except Exception as e:
-        print(f"[Agente 4] Executor PIL falhou: {e}")
+        _log.warning("pil_falhou", extra={"erro": str(e)})
         return False
 
 
@@ -146,10 +149,10 @@ def _claude_desenha(nome: str, caminho_saida: str) -> bool:
         instrucoes = extrair_json(resp.content[0].text)
         ok = _executar_desenho_PIL(instrucoes, caminho_saida)
         if ok:
-            print(f"[Agente 4] Claude desenhou: '{nome}'")
+            _log.info("claude_desenhou", extra={"nome": nome})
         return ok
     except Exception as e:
-        print(f"[Agente 4] Claude desenho falhou: {e}")
+        _log.warning("claude_desenho_falhou", extra={"erro": str(e), "nome": nome})
         return False
 
 
@@ -169,7 +172,7 @@ def _placeholder_PIL(nome: str, icone_emoji: str, grupo: str, caminho_saida: str
         img.save(caminho_saida, "PNG")
         return True
     except Exception as e:
-        print(f"[Agente 4] Placeholder falhou: {e}")
+        _log.error("placeholder_falhou", extra={"erro": str(e)})
         return False
 
 
@@ -184,7 +187,9 @@ def gerar_icone(recorte_path: str, nome: str, categoria_nome: str,
     objeto_id DEVE ser o cursor.lastrowid — INSERT já feito antes desta chamada.
     """
     caminho = str(ICONES_DIR / f"objeto_{objeto_id:06d}.png")
-    print(f"[Agente 4] Gerando ícone para '{nome}' (confiança={confianca:.2f})")
+    _log.info("gerando_icone", extra={
+        "nome": nome, "confianca": confianca, "objeto_id": objeto_id,
+    })
 
     # 1. Recorte local (alta qualidade)
     if confianca >= 0.75 and recorte_path:

@@ -1,6 +1,7 @@
 """
 API FastAPI. CRÍTICO: StaticFiles montado APÓS todos os routers /api.
 """
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,11 +19,14 @@ from api.routes.estatisticas import router as r_stats
 from api.routes.modelos      import router as r_modelos
 
 
+_log = logging.getLogger("casaiq.app")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
     init_db()
-    print(f"[CasaIQ] Modo de operação: {descricao_modo()}")
+    _log.info("startup", extra={"descricao_modo": descricao_modo()})
     yield
 
 

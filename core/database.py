@@ -3,9 +3,12 @@ Conexão SQLite thread-safe.
 REGRA: sempre crie get_db() DENTRO da thread que vai usá-la.
 O BackgroundTask do FastAPI roda em thread separada — crie a conexão lá dentro.
 """
+import logging
 import sqlite3
 from datetime import datetime, date
 from core.config import DB_PATH
+
+_log = logging.getLogger("casaiq.database")
 
 
 # Adapters/converters explícitos: o adapter implícito do sqlite3 para datetime
@@ -63,7 +66,7 @@ def init_db() -> None:
             except sqlite3.OperationalError:
                 pass  # coluna já existe
         conn.commit()
-        print("[Database] Banco inicializado.")
+        _log.info("banco_inicializado")
     finally:
         conn.close()
 

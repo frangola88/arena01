@@ -4,8 +4,11 @@ Agente 3: Enriquecedor de Metadados
 Sempre usa modelo local (llama3.2) — tarefa simples de classificação.
 O roteador em deve_usar_claude_texto(CLASSIFICACAO/ENRIQUECIMENTO) retorna False.
 """
+import logging
 from core.llm import chamar_texto, extrair_json
 from core.roteador import TarefaTexto
+
+_log = logging.getLogger("casaiq.agent_3")
 
 PROMPT_ENRIQUECIMENTO = """
 Objeto de inventario domestico:
@@ -46,7 +49,7 @@ def enriquecer_objeto(analise: dict, categorias_disponiveis: list[str]) -> dict:
     Enriquece metadados. categorias_disponiveis DEVE ser passado pelo pipeline
     (buscado do banco antes de entrar no loop de objetos).
     """
-    print(f"[Agente 3] Enriquecendo: '{analise.get('nome', '')}'")
+    _log.info("enriquecendo", extra={"nome": analise.get("nome", "")})
     resultado = analise.copy()
     try:
         prompt = PROMPT_ENRIQUECIMENTO.format(
@@ -65,7 +68,8 @@ def enriquecer_objeto(analise: dict, categorias_disponiveis: list[str]) -> dict:
         todas.append(resultado["nome"])
         resultado["palavras_chave"] = _formatar_palavras_chave(todas)
     except Exception as e:
-        print(f"[Agente 3] ERRO: {e}. Usando 'Outros'.")
+        _log.warning("erro_enriquecimento_fallback_outros",
+                     extra={"erro": str(e), "nome": analise.get("nome", "")})
         resultado["categoria_nome"] = "Outros"
         resultado["palavras_chave"] = _formatar_palavras_chave(
             list(analise.get("palavras_chave", [])) + [analise.get("nome", "")]

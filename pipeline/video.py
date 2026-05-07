@@ -11,9 +11,9 @@ Pipeline de Ingestão de Vídeo:
 
 Thread safety: nova conexão SQLite dentro da função (BackgroundTask = thread).
 """
+import logging
 import re
 import subprocess
-import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -24,6 +24,8 @@ from agents.agent_1_segmentador import segmentar_foto
 from agents.agent_2_analisador   import analisar_objeto
 from agents.agent_3_enriquecedor import enriquecer_objeto
 from agents.agent_4_icone        import gerar_icone
+
+_log = logging.getLogger("casaiq.pipeline.video")
 
 
 def _extrair_keyframes(caminho_video: str, video_id: int) -> list[str]:
@@ -40,7 +42,10 @@ def _extrair_keyframes(caminho_video: str, video_id: int) -> list[str]:
         "-q:v", "3",
         str(padrao),
     ]
-    print(f"[Vídeo] ffmpeg fps={CASAIQ_VIDEO_FPS} max={CASAIQ_VIDEO_MAX_FRAMES}")
+    _log.info("ffmpeg_inicio", extra={
+        "fps": CASAIQ_VIDEO_FPS, "max_frames": CASAIQ_VIDEO_MAX_FRAMES,
+        "video_id": video_id,
+    })
     subprocess.run(cmd, check=True, timeout=300)
     return sorted(str(p) for p in saida_dir.glob("frame_*.jpg"))
 
@@ -68,7 +73,9 @@ def processar_video(caminho_video: str, localizacao_id: int, video_db_id: int) -
             (len(keyframes), video_db_id)
         )
         conn.commit()
-        print(f"[Vídeo] {len(keyframes)} keyframe(s) extraído(s)")
+        _log.info("keyframes_extraidos", extra={
+            "total": len(keyframes), "video_id": video_db_id,
+        })
 
         rows = conn.execute("SELECT nome, grupo, icone FROM categorias").fetchall()
         categorias_nomes  = [r["nome"] for r in rows]
@@ -77,7 +84,9 @@ def processar_video(caminho_video: str, localizacao_id: int, video_db_id: int) -
         # Detecções acumuladas por nome normalizado (mantém maior confiança)
         deteccoes: dict[str, dict] = {}
         for idx, frame_path in enumerate(keyframes):
-            print(f"[Vídeo] Frame {idx + 1}/{len(keyframes)}")
+            _log.info("processando_frame", extra={
+                "frame": idx + 1, "total": len(keyframes), "video_id": video_db_id,
+            })
             try:
                 synthetic_id = 100000 + video_db_id * 100 + idx
                 objetos = segmentar_foto(frame_path, synthetic_id)
@@ -95,10 +104,13 @@ def processar_video(caminho_video: str, localizacao_id: int, video_db_id: int) -
                         if anterior is None or nova_conf > float(anterior.get("confianca") or 0.0):
                             deteccoes[chave] = enriquecido
                     except Exception as e:
-                        print(f"[Vídeo] erro objeto '{obj.get('nome')}': {e}")
+                        _log.warning("erro_objeto_em_frame", extra={
+                            "nome": obj.get("nome"), "frame": idx + 1, "erro": str(e),
+                        })
             except Exception as e:
-                print(f"[Vídeo] erro frame {idx + 1}: {e}")
-                traceback.print_exc()
+                _log.warning("erro_frame", extra={
+                    "frame": idx + 1, "erro": str(e), "video_id": video_db_id,
+                }, exc_info=True)
             conn.execute(
                 "UPDATE videos_processados SET frames_processados=? WHERE id=?",
                 (idx + 1, video_db_id)
@@ -158,8 +170,9 @@ def processar_video(caminho_video: str, localizacao_id: int, video_db_id: int) -
                 conn.commit()
                 inseridos += 1
             except Exception as e:
-                print(f"[Vídeo] erro inserindo '{chave}': {e}")
-                traceback.print_exc()
+                _log.warning("erro_insert", extra={
+                    "chave": chave, "erro": str(e), "video_id": video_db_id,
+                }, exc_info=True)
 
         conn.execute("""
             UPDATE videos_processados
@@ -167,12 +180,15 @@ def processar_video(caminho_video: str, localizacao_id: int, video_db_id: int) -
             WHERE id=?
         """, (inseridos, datetime.now(), video_db_id))
         conn.commit()
-        print(f"[Vídeo] Concluído: {inseridos} objeto(s) único(s) "
-              f"de {len(deteccoes)} detecção(ões) em {len(keyframes)} frame(s)")
+        _log.info("video_concluido", extra={
+            "inseridos": inseridos, "deteccoes": len(deteccoes),
+            "frames": len(keyframes), "video_id": video_db_id,
+        })
 
     except Exception as e:
-        print(f"[Vídeo] ERRO CRÍTICO: {e}")
-        traceback.print_exc()
+        _log.error("erro_critico", extra={
+            "erro": str(e), "video_id": video_db_id,
+        }, exc_info=True)
         try:
             conn.execute(
                 "UPDATE videos_processados SET status='erro', erro_mensagem=? WHERE id=?",

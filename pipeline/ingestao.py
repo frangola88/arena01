@@ -10,13 +10,15 @@ Pipeline de Ingestão — ordem correta de operações:
 
 Thread safety: cria conexão SQLite DENTRO desta função (BackgroundTask = thread separada).
 """
-import traceback
+import logging
 from datetime import datetime
 from core.database import get_db
 from agents.agent_1_segmentador import segmentar_foto
 from agents.agent_2_analisador   import analisar_objeto
 from agents.agent_3_enriquecedor import enriquecer_objeto
 from agents.agent_4_icone        import gerar_icone
+
+_log = logging.getLogger("casaiq.pipeline.foto")
 
 
 def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> None:
@@ -45,7 +47,7 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
         progresso("Agente 1: segmentando objetos da foto…")
         objetos_detectados = segmentar_foto(caminho_foto, foto_db_id)
         total = len(objetos_detectados)
-        print(f"[Pipeline] {total} objeto(s) detectado(s).")
+        _log.info("objetos_detectados", extra={"total": total, "foto_id": foto_db_id})
         progresso(f"Agente 1: {total} objeto(s) detectado(s)")
 
         for idx, obj in enumerate(objetos_detectados, start=1):
@@ -106,8 +108,9 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
                 inseridos += 1
 
             except Exception as e:
-                print(f"[Pipeline] ERRO objeto '{obj.get('nome')}': {e}")
-                traceback.print_exc()
+                _log.warning("erro_objeto", extra={
+                    "nome": obj.get("nome"), "erro": str(e), "foto_id": foto_db_id,
+                }, exc_info=True)
 
         conn.execute("""
             UPDATE fotos_processadas
@@ -115,11 +118,12 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
             WHERE id=?
         """, (inseridos, datetime.now(), foto_db_id))
         conn.commit()
-        print(f"[Pipeline] Concluído: {inseridos} objeto(s) inserido(s).")
+        _log.info("foto_concluida", extra={"inseridos": inseridos, "foto_id": foto_db_id})
 
     except Exception as e:
-        print(f"[Pipeline] ERRO CRÍTICO: {e}")
-        traceback.print_exc()
+        _log.error("erro_critico", extra={
+            "erro": str(e), "foto_id": foto_db_id,
+        }, exc_info=True)
         try:
             conn.execute(
                 "UPDATE fotos_processadas SET status='erro', erro_mensagem=? WHERE id=?",

@@ -4,6 +4,7 @@ A DECISÃO de qual chamar está em core/roteador.py.
 Este módulo apenas executa, com timeout e tratamento de erros.
 """
 import json
+import logging
 import re
 import threading
 from pathlib import Path
@@ -15,6 +16,8 @@ from core.config import (
 )
 from core.runtime import get_vision_model, get_text_model
 from core.roteador import TarefaTexto, deve_usar_claude_visao, deve_usar_claude_texto
+
+_log = logging.getLogger("casaiq.llm")
 
 
 class OllamaIndisponivel(Exception):
@@ -71,7 +74,6 @@ def _ollama_texto(prompt: str) -> str:
 
 def _claude_visao(prompt: str, imagem_path: str) -> str:
     import anthropic, base64
-    from datetime import datetime
     ext = Path(imagem_path).suffix.lower()
     mt  = {".jpg": "image/jpeg", ".jpeg": "image/jpeg",
            ".png": "image/png",  ".webp": "image/webp"}.get(ext, "image/jpeg")
@@ -85,19 +87,20 @@ def _claude_visao(prompt: str, imagem_path: str) -> str:
             {"type": "text",  "text": prompt},
         ]}],
     )
-    print(f"[Claude API] visão @ {datetime.now().strftime('%H:%M:%S')}")
+    _log.info("claude_visao_chamada", extra={"modelo": ANTHROPIC_MODEL})
     return resp.content[0].text
 
 
 def _claude_texto(prompt: str, max_tokens: int = 512) -> str:
     import anthropic
-    from datetime import datetime
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     resp = client.messages.create(
         model=ANTHROPIC_MODEL, max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
-    print(f"[Claude API] texto @ {datetime.now().strftime('%H:%M:%S')}")
+    _log.info("claude_texto_chamada", extra={
+        "modelo": ANTHROPIC_MODEL, "max_tokens": max_tokens,
+    })
     return resp.content[0].text
 
 
@@ -118,12 +121,12 @@ def chamar_visao(prompt: str, imagem_path: str,
         try:
             return _claude_visao(prompt, imagem_path), "claude_api"
         except Exception as e:
-            print(f"[LLM] Claude visão falhou ({e}). Tentando Ollama.")
+            _log.warning("claude_visao_falhou_fallback_ollama", extra={"erro": str(e)})
     try:
         return _ollama_visao(prompt, imagem_path), "ollama"
     except OllamaIndisponivel as e:
         if ANTHROPIC_API_KEY and _modo() != Modo.OFFLINE and not usar_claude:
-            print(f"[LLM] Ollama visão indisponível. Usando Claude como fallback.")
+            _log.warning("ollama_visao_indisponivel_fallback_claude", extra={"erro": str(e)})
             return _claude_visao(prompt, imagem_path), "claude_api"
         raise RuntimeError(f"Visão indisponível: Ollama falhou ({e}) e sem Claude API.") from e
 
@@ -141,12 +144,14 @@ def chamar_texto(prompt: str, tarefa: TarefaTexto = TarefaTexto.RESPOSTA_CHAT,
         try:
             return _claude_texto(prompt, max_tokens), "claude_api"
         except Exception as e:
-            print(f"[LLM] Claude texto falhou ({e}). Tentando Ollama.")
+            _log.warning("claude_texto_falhou_fallback_ollama",
+                         extra={"erro": str(e), "tarefa": tarefa.value})
     try:
         return _ollama_texto(prompt), "ollama"
     except OllamaIndisponivel as e:
         if ANTHROPIC_API_KEY and _modo() != Modo.OFFLINE and not usar_claude:
-            print(f"[LLM] Ollama texto indisponível. Usando Claude como fallback.")
+            _log.warning("ollama_texto_indisponivel_fallback_claude",
+                         extra={"erro": str(e), "tarefa": tarefa.value})
             return _claude_texto(prompt, max_tokens), "claude_api"
         raise RuntimeError(f"Texto indisponível: Ollama falhou ({e}) e sem Claude API.") from e
 
