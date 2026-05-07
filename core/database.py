@@ -4,7 +4,38 @@ REGRA: sempre crie get_db() DENTRO da thread que vai usá-la.
 O BackgroundTask do FastAPI roda em thread separada — crie a conexão lá dentro.
 """
 import sqlite3
+from datetime import datetime, date
 from core.config import DB_PATH
+
+
+# Adapters/converters explícitos: o adapter implícito do sqlite3 para datetime
+# foi deprecado em Python 3.12 e será removido em 3.14.
+def _adapt_datetime(val: datetime) -> str:
+    return val.isoformat(sep=" ")
+
+
+def _adapt_date(val: date) -> str:
+    return val.isoformat()
+
+
+def _convert_datetime(val: bytes) -> datetime:
+    return datetime.fromisoformat(val.decode())
+
+
+def _convert_date(val: bytes) -> date:
+    return date.fromisoformat(val.decode())
+
+
+sqlite3.register_adapter(datetime, _adapt_datetime)
+sqlite3.register_adapter(date, _adapt_date)
+# CURRENT_TIMESTAMP do SQLite vira string "YYYY-MM-DD HH:MM:SS"; PARSE_DECLTYPES
+# casa pelo nome declarado da coluna (DATETIME). TIMESTAMP é incluído por hábito.
+sqlite3.register_converter("datetime", _convert_datetime)
+sqlite3.register_converter("DATETIME", _convert_datetime)
+sqlite3.register_converter("timestamp", _convert_datetime)
+sqlite3.register_converter("TIMESTAMP", _convert_datetime)
+sqlite3.register_converter("date", _convert_date)
+sqlite3.register_converter("DATE", _convert_date)
 
 
 def get_db() -> sqlite3.Connection:
