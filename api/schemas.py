@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
+from core.sql_safe import MAX_PERGUNTA_CHARS
 
 class LocalizacaoCreate(BaseModel):
     nome: str
@@ -20,4 +21,4 @@ class ObjetoUpdate(BaseModel):
     palavras_chave: Optional[str] = None
 
 class ChatRequest(BaseModel):
-    pergunta: str
+    pergunta: str = Field(min_length=1, max_length=MAX_PERGUNTA_CHARS)

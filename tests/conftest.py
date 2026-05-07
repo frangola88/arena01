@@ -74,6 +74,11 @@ def db_temp(tmp_path, monkeypatch) -> Path:
     # Patcha em todos os módulos que importaram DB_PATH como nome local
     monkeypatch.setattr("core.config.DB_PATH", db_path)
     monkeypatch.setattr("core.database.DB_PATH", db_path)
+    try:
+        import core.sql_safe  # noqa: F401
+        monkeypatch.setattr("core.sql_safe.DB_PATH", db_path)
+    except ImportError:
+        pass
 
     from core.database import init_db
     init_db()

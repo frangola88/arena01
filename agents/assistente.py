@@ -11,6 +11,10 @@ import json
 import re
 from core.llm import chamar_texto
 from core.roteador import TarefaTexto
+from core.sql_safe import (
+    MAX_PERGUNTA_CHARS, SQLInseguro,
+    validar_select, garantir_limit, conectar_readonly,
+)
 
 PROMPT_SQL = """
 Converta a pergunta em SQL SELECT para o banco de inventario domestico.
@@ -50,20 +54,35 @@ Responda em portugues brasileiro de forma util e natural.
 def chat(pergunta: str, db_conn) -> dict:
     """
     Retorna {"resposta": str, "sql": str, "resultados": list, "modelo": str}.
-    db_conn = conexao SQLite da thread atual.
+    db_conn = conexao SQLite da thread atual (usada SÓ para gravar histórico).
+
+    O SQL gerado pelo LLM é executado numa conexão read-only separada —
+    o engine SQLite recusa qualquer mutação mesmo se a validação textual falhar.
     """
     sql_gerado, resultados, modelo_usado = "", [], "ollama"
+
+    if len(pergunta or "") > MAX_PERGUNTA_CHARS:
+        return {
+            "resposta": f"Pergunta muito longa (máx {MAX_PERGUNTA_CHARS} caracteres).",
+            "sql": "", "resultados": [], "modelo": "rejeitado",
+        }
 
     try:
         prompt_sql = PROMPT_SQL.format(pergunta=pergunta)
         sql_bruto, modelo_usado = chamar_texto(prompt_sql, tarefa=TarefaTexto.TEXT_TO_SQL)
         linhas_sql = [l for l in sql_bruto.splitlines()
                       if l.strip().lower() not in ("sql", "python", "")]
-        sql_gerado = "\n".join(linhas_sql).strip()
-        if not sql_gerado.upper().startswith("SELECT"):
-            raise ValueError(f"SQL gerado nao e SELECT: {sql_gerado[:80]}")
-        rows = db_conn.execute(sql_gerado).fetchall()
+        sql_candidato = "\n".join(linhas_sql).strip()
+        sql_gerado = garantir_limit(validar_select(sql_candidato))
+        ro = conectar_readonly()
+        try:
+            rows = ro.execute(sql_gerado).fetchall()
+        finally:
+            ro.close()
         resultados = [dict(r) for r in rows]
+    except SQLInseguro as e:
+        print(f"[Assistente] SQL bloqueado pelo validador: {e}")
+        sql_gerado, resultados = "", []
     except Exception as e:
         print(f"[Assistente] ERRO SQL: {e}")
         sql_gerado, resultados = "", []
