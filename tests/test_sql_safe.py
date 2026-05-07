@@ -15,7 +15,7 @@ import pytest
 
 from core.sql_safe import (
     SQLInseguro, validar_select, garantir_limit, conectar_readonly,
-    MAX_SQL_CHARS, MAX_LINHAS,
+    schema_para_prompt, MAX_SQL_CHARS, MAX_LINHAS,
 )
 
 
@@ -142,6 +142,61 @@ def test_readonly_recusa_drop_table(db_temp):
     finally:
         ro.close()
 
+
+# ---------------------------------------------------------------------------
+# schema_para_prompt — introspecção dinâmica do schema
+# ---------------------------------------------------------------------------
+
+def test_schema_para_prompt_lista_tabelas_user_facing(db_temp):
+    ro = conectar_readonly(db_temp)
+    try:
+        s = schema_para_prompt(ro)
+    finally:
+        ro.close()
+    assert "objetos(" in s
+    assert "localizacoes(" in s
+    assert "categorias(" in s
+
+
+def test_schema_para_prompt_e_dinamico_inclui_colunas_que_o_hardcoded_omitia(db_temp):
+    """Antes do dinâmico, o prompt tinha schema hardcoded sem colunas como
+    foto_original_path, recorte_path, icone_fonte, modelo_visao, etc.
+    Agora o LLM vê o schema vivo."""
+    ro = conectar_readonly(db_temp)
+    try:
+        s = schema_para_prompt(ro)
+    finally:
+        ro.close()
+    for col in ("foto_original_path", "recorte_path", "icone_fonte",
+                "modelo_visao", "revisado_pelo_usuario"):
+        assert col in s, f"coluna '{col}' deveria estar no schema dinâmico"
+
+
+def test_schema_para_prompt_nao_expoe_historico_chat(db_temp):
+    """Privacidade: histórico de perguntas/respostas NÃO vai pro contexto do LLM."""
+    ro = conectar_readonly(db_temp)
+    try:
+        s = schema_para_prompt(ro)
+    finally:
+        ro.close()
+    assert "historico_chat" not in s
+
+
+def test_schema_para_prompt_nao_expoe_estado_interno_de_pipeline(db_temp):
+    """Tabelas de estado interno (fotos/videos processados, sqlite_master) ficam ocultas."""
+    ro = conectar_readonly(db_temp)
+    try:
+        s = schema_para_prompt(ro)
+    finally:
+        ro.close()
+    assert "fotos_processadas" not in s
+    assert "videos_processados" not in s
+    assert "sqlite_master" not in s
+
+
+# ---------------------------------------------------------------------------
+# ATTACH read-only
+# ---------------------------------------------------------------------------
 
 def test_attach_e_responsabilidade_do_validador_textual(db_temp, tmp_path):
     """Documenta limite da camada read-only: ATTACH NÃO é bloqueado pelo

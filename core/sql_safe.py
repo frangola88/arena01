@@ -97,3 +97,27 @@ def conectar_readonly(db_path: Path | str | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+# Whitelist do que o LLM pode "ver" do schema. Esconde:
+#   historico_chat (privacidade do usuário)
+#   fotos_processadas / videos_processados (estado interno de pipeline)
+#   sqlite_master e companhia (introspecção do engine)
+_TABELAS_EXPOSTAS_AO_LLM = ("objetos", "localizacoes", "categorias")
+
+
+def schema_para_prompt(conn: sqlite3.Connection) -> str:
+    """Introspecta o schema das tabelas user-facing e retorna formato compacto
+    pronto pra injetar no prompt de text-to-SQL.
+
+    O LLM passa a "ver" o schema vivo do banco, não uma cópia hardcoded que
+    apodrece a cada migração. Apenas tabelas da whitelist são expostas.
+    """
+    linhas = []
+    for tabela in _TABELAS_EXPOSTAS_AO_LLM:
+        cols = conn.execute(f"PRAGMA table_info({tabela})").fetchall()
+        if not cols:
+            continue
+        nomes = [c[1] for c in cols]   # row[1] = name
+        linhas.append(f"  {tabela}({', '.join(nomes)})")
+    return "\n".join(linhas)

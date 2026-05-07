@@ -13,18 +13,14 @@ from core.llm import chamar_texto
 from core.roteador import TarefaTexto
 from core.sql_safe import (
     MAX_PERGUNTA_CHARS, SQLInseguro,
-    validar_select, garantir_limit, conectar_readonly,
+    validar_select, garantir_limit, conectar_readonly, schema_para_prompt,
 )
 
 PROMPT_SQL = """
 Converta a pergunta em SQL SELECT para o banco de inventario domestico.
 
 Schema:
-  objetos(id, nome, descricao, categoria_id, localizacao_id, cor, tamanho,
-          tamanho_estimado_cm, peso_estimado_g, material, estado, funcao,
-          palavras_chave, icone_path, confianca)
-  localizacoes(id, nome, tipo, comodo)
-  categorias(id, nome, grupo, icone)
+{schema}
 
 Joins uteis:
   JOIN localizacoes l ON objetos.localizacao_id = l.id
@@ -68,18 +64,19 @@ def chat(pergunta: str, db_conn) -> dict:
         }
 
     try:
-        prompt_sql = PROMPT_SQL.format(pergunta=pergunta)
-        sql_bruto, modelo_usado = chamar_texto(prompt_sql, tarefa=TarefaTexto.TEXT_TO_SQL)
-        linhas_sql = [l for l in sql_bruto.splitlines()
-                      if l.strip().lower() not in ("sql", "python", "")]
-        sql_candidato = "\n".join(linhas_sql).strip()
-        sql_gerado = garantir_limit(validar_select(sql_candidato))
         ro = conectar_readonly()
         try:
+            schema = schema_para_prompt(ro)
+            prompt_sql = PROMPT_SQL.format(schema=schema, pergunta=pergunta)
+            sql_bruto, modelo_usado = chamar_texto(prompt_sql, tarefa=TarefaTexto.TEXT_TO_SQL)
+            linhas_sql = [l for l in sql_bruto.splitlines()
+                          if l.strip().lower() not in ("sql", "python", "")]
+            sql_candidato = "\n".join(linhas_sql).strip()
+            sql_gerado = garantir_limit(validar_select(sql_candidato))
             rows = ro.execute(sql_gerado).fetchall()
+            resultados = [dict(r) for r in rows]
         finally:
             ro.close()
-        resultados = [dict(r) for r in rows]
     except SQLInseguro as e:
         print(f"[Assistente] SQL bloqueado pelo validador: {e}")
         sql_gerado, resultados = "", []

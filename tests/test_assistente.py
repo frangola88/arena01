@@ -214,6 +214,38 @@ def test_historico_gravado_mesmo_quando_sql_e_bloqueado(db_temp, mock_llm):
 # LLM falha completamente (timeout, etc.) → assistente degrada graciosamente
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Prompt SQL recebe schema dinâmico (introspecção do banco vivo)
+# ---------------------------------------------------------------------------
+
+def test_prompt_sql_recebe_schema_dinamico_do_banco(db_temp, mock_llm):
+    """O 1º prompt enviado ao LLM (text_to_sql) deve conter o schema real
+    do banco — incluindo colunas que estavam ausentes do hardcoded antigo."""
+    _seed_objetos(db_temp, qtd=1)
+    mock_llm.side_effect = [
+        ("SELECT 1", "ollama"),
+        ("ok", "ollama"),
+    ]
+    from agents.assistente import chat
+    from core.database import get_db
+    conn = get_db()
+    try:
+        chat("teste", conn)
+    finally:
+        conn.close()
+
+    primeiro_prompt = mock_llm.call_args_list[0].args[0]
+    # Tabelas user-facing presentes:
+    assert "objetos(" in primeiro_prompt
+    assert "localizacoes(" in primeiro_prompt
+    assert "categorias(" in primeiro_prompt
+    # Colunas que o hardcoded omitia agora aparecem:
+    assert "modelo_visao" in primeiro_prompt
+    assert "foto_original_path" in primeiro_prompt
+    # historico_chat não vaza pro LLM:
+    assert "historico_chat" not in primeiro_prompt
+
+
 def test_falha_total_do_llm_nao_quebra_assistente(db_temp, mock_llm):
     mock_llm.side_effect = RuntimeError("LLM offline")
 
