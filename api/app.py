@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from core.database import init_db
+from core.logging_config import setup_logging
 from core.roteador import descricao_modo
 from api.routes.localizacoes import router as r_loc
 from api.routes.fotos        import router as r_fotos
@@ -19,6 +20,7 @@ from api.routes.modelos      import router as r_modelos
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
     init_db()
     print(f"[CasaIQ] Modo de operação: {descricao_modo()}")
     yield

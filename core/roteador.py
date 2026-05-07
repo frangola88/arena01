@@ -21,9 +21,12 @@ MODO INTELIGENTE — regras:
     -> local para classificação simples e enriquecimento de metadados
     -> Claude para: text-to-SQL, guias "como fazer", respostas de chat complexas
 """
+import logging
 from enum import Enum
 from typing import Optional
 from core.config import CASAIQ_MODO, ANTHROPIC_API_KEY, LIMIAR_CONFIANCA
+
+_log = logging.getLogger("casaiq.roteador")
 
 
 class Modo(str, Enum):
@@ -64,8 +67,33 @@ def _modo() -> Modo:
     try:
         return Modo(CASAIQ_MODO)
     except ValueError:
-        print(f"[Roteador] CASAIQ_MODO='{CASAIQ_MODO}' inválido. Usando 'inteligente'.")
+        _log.warning("modo_invalido", extra={
+            "valor_recebido": CASAIQ_MODO, "fallback": Modo.INTELIGENTE.value,
+        })
         return Modo.INTELIGENTE
+
+
+def _emitir_visao(decisao: bool, motivo: str, *, confianca: Optional[float]) -> bool:
+    _log.info("decisao_visao", extra={
+        "modo":      _modo().value,
+        "tem_api":   _tem_api(),
+        "decisao":   decisao,
+        "motivo":    motivo,
+        "limiar":    LIMIAR_CONFIANCA,
+        "confianca": confianca,
+    })
+    return decisao
+
+
+def _emitir_texto(decisao: bool, motivo: str, *, tarefa: TarefaTexto) -> bool:
+    _log.info("decisao_texto", extra={
+        "modo":    _modo().value,
+        "tem_api": _tem_api(),
+        "decisao": decisao,
+        "motivo":  motivo,
+        "tarefa":  tarefa.value,
+    })
+    return decisao
 
 
 def deve_usar_claude_visao(confianca_anterior: Optional[float] = None) -> bool:
@@ -75,19 +103,19 @@ def deve_usar_claude_visao(confianca_anterior: Optional[float] = None) -> bool:
     """
     modo = _modo()
     if not _tem_api():
-        return False
+        return _emitir_visao(False, "sem_api_key", confianca=confianca_anterior)
     if modo == Modo.OFFLINE:
-        return False
+        return _emitir_visao(False, "modo_offline", confianca=confianca_anterior)
     if modo == Modo.CLAUDE:
-        return True
+        return _emitir_visao(True, "modo_claude", confianca=confianca_anterior)
     if modo == Modo.HIBRIDO:
-        # No modo híbrido: visão fica sempre local; Claude só para texto
-        return False
+        return _emitir_visao(False, "modo_hibrido_visao_local", confianca=confianca_anterior)
     # Modos LOCAL_PRIMEIRO e INTELIGENTE:
-    # -> só vai para Claude se a tentativa local retornou baixa confiança
     if confianca_anterior is not None and confianca_anterior < LIMIAR_CONFIANCA:
-        return True
-    return False
+        return _emitir_visao(True, "confianca_abaixo_limiar", confianca=confianca_anterior)
+    if confianca_anterior is None:
+        return _emitir_visao(False, "primeira_tentativa_local", confianca=None)
+    return _emitir_visao(False, "confianca_acima_limiar", confianca=confianca_anterior)
 
 
 def deve_usar_claude_texto(tarefa: TarefaTexto) -> bool:
@@ -97,18 +125,19 @@ def deve_usar_claude_texto(tarefa: TarefaTexto) -> bool:
     """
     modo = _modo()
     if not _tem_api():
-        return False
+        return _emitir_texto(False, "sem_api_key", tarefa=tarefa)
     if modo == Modo.OFFLINE:
-        return False
+        return _emitir_texto(False, "modo_offline", tarefa=tarefa)
     if tarefa in _TAREFAS_SEMPRE_LOCAL:
-        return False
+        return _emitir_texto(False, "tarefa_sempre_local", tarefa=tarefa)
     if modo == Modo.CLAUDE:
-        return True
+        return _emitir_texto(True, "modo_claude", tarefa=tarefa)
     if modo in (Modo.HIBRIDO, Modo.INTELIGENTE):
-        return tarefa in _TAREFAS_PREFERENCIALMENTE_CLAUDE
-    # LOCAL_PRIMEIRO: usa Claude para texto preferencial só se local falhar
-    # (a lógica de fallback em caso de falha está em llm.py)
-    return False
+        if tarefa in _TAREFAS_PREFERENCIALMENTE_CLAUDE:
+            return _emitir_texto(True, "tarefa_preferencial_claude", tarefa=tarefa)
+        return _emitir_texto(False, "tarefa_nao_preferencial", tarefa=tarefa)
+    # LOCAL_PRIMEIRO
+    return _emitir_texto(False, "modo_local_primeiro", tarefa=tarefa)
 
 
 def descricao_modo() -> str:
