@@ -198,20 +198,33 @@ def test_schema_para_prompt_nao_expoe_estado_interno_de_pipeline(db_temp):
 # ATTACH read-only
 # ---------------------------------------------------------------------------
 
-def test_attach_e_responsabilidade_do_validador_textual(db_temp, tmp_path):
-    """Documenta limite da camada read-only: ATTACH NÃO é bloqueado pelo
-    engine (o DB anexado pode até ser gravado). A única defesa é o validador
-    textual em validar_select() — já testado em test_validar_bloqueia_ataque.
+def test_attach_bloqueado_por_set_authorizer(db_temp, tmp_path):
+    """Verifica que ATTACH é bloqueado em dois níveis:
+    1. Validador textual: rejeita em validar_select()
+    2. Engine via set_authorizer: bloqueia execução mesmo se validador falhar
     """
     outro = tmp_path / "outro.db"
     sqlite3.connect(outro).execute("CREATE TABLE t(x)")  # cria DB anexável
 
     ro = conectar_readonly(db_temp)
     try:
-        # Confirma o comportamento do SQLite (engine permite ATTACH em RO):
-        ro.execute(f"ATTACH DATABASE '{outro}' AS x")
-        # E confirma que o validador textual rejeita ANTES de chegar aqui:
+        # Camada 1: validador textual rejeita ATTACH:
         with pytest.raises(SQLInseguro):
             validar_select(f"ATTACH DATABASE '{outro}' AS x")
+        
+        # Camada 2: engine via set_authorizer bloqueia execução direta:
+        # (mesmo que validador falhasse, esta camada ainda protege)
+        with pytest.raises((sqlite3.OperationalError, sqlite3.DatabaseError), match="not authorized"):
+            ro.execute(f"ATTACH DATABASE '{outro}' AS x")
+    finally:
+        ro.close()
+
+
+def test_detach_bloqueado_por_set_authorizer(db_temp):
+    """Verifica que DETACH é bloqueado pelo set_authorizer."""
+    ro = conectar_readonly(db_temp)
+    try:
+        with pytest.raises((sqlite3.OperationalError, sqlite3.DatabaseError), match="not authorized"):
+            ro.execute("DETACH DATABASE 'main'")
     finally:
         ro.close()

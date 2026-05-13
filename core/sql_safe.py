@@ -2,11 +2,13 @@
 
 Defesa em camadas (cada camada é redundante; mesmo se uma falhar as outras seguram):
 
-  1. validar_select(sql)   — whitelist + regex bloqueia DDL/DML, comentários,
-                             multi-statement, tokens perigosos (ATTACH, PRAGMA…).
-  2. garantir_limit(sql)   — injeta LIMIT no fim se ausente.
-  3. conectar_readonly()   — abre SQLite em mode=ro via URI; o próprio engine
-                             recusa qualquer mutação, mesmo que a camada 1 falhe.
+  1. validar_select(sql)    — whitelist + regex bloqueia DDL/DML, comentários,
+                              multi-statement, tokens perigosos (ATTACH, PRAGMA…).
+  2. garantir_limit(sql)    — injeta LIMIT no fim se ausente.
+  3. conectar_readonly()    — abre SQLite em mode=ro via URI; o próprio engine
+                              recusa qualquer mutação, mesmo que a camada 1 falhe.
+  4. set_authorizer()       — bloqueia ATTACH/DETACH no nível do engine via
+                              callback nativo, defendendo contra bypasses de regex.
 
 Camada extra do stdlib: sqlite3.Connection.execute() já recusa múltiplos
 statements ('You can only execute one statement at a time').
@@ -87,8 +89,24 @@ def garantir_limit(sql: str, maximo: int = MAX_LINHAS) -> str:
     return f"{s} LIMIT {maximo}"
 
 
+def _bloquear_attach_detach(action: int, arg1: str | None, arg2: str | None,
+                            arg3: str | None, arg4: str | None) -> int:
+    """Callback de autorização que bloqueia ATTACH e DETACH.
+    
+    Retorna sqlite3.SQLITE_DENY para essas operações e sqlite3.SQLITE_OK
+    para as demais.
+    """
+    if action in (sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH):
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
 def conectar_readonly(db_path: Path | str | None = None) -> sqlite3.Connection:
     """Conexão SQLite em modo read-only via URI. O engine recusa qualquer escrita.
+
+    Camadas de segurança:
+      1. mode=ro bloqueia mutações
+      2. set_authorizer bloqueia ATTACH/DETACH no nível do engine
 
     Usar essa conexão para executar SQL gerado por LLM — nunca a get_db() comum.
     """
@@ -96,6 +114,7 @@ def conectar_readonly(db_path: Path | str | None = None) -> sqlite3.Connection:
     uri = f"file:{caminho}?mode=ro"
     conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.set_authorizer(_bloquear_attach_detach)
     return conn
 
 
