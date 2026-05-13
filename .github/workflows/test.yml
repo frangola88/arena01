@@ -32,5 +32,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Run pytest (deprecations as errors)
-        run: pytest -W error::DeprecationWarning
+      - name: Run pytest with coverage
+        run: pytest -W error::DeprecationWarning --cov=. --cov-fail-under=80 --cov-report=term-missing
