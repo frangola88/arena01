@@ -210,6 +210,44 @@ def test_historico_gravado_mesmo_quando_sql_e_bloqueado(db_temp, mock_llm):
         conn.close()
 
 
+def test_historico_chat_bound_retencao(db_temp):
+    """Verifica que historico_chat mantém apenas os últimos 100 registros.
+    
+    Inserir 150 registros → limpeza automática deixa apenas 100.
+    """
+    from agents.assistente import HISTORICO_CHAT_MAX_RETENCAO, _limpar_historico_chat
+    from core.database import get_db
+    
+    conn = get_db()
+    try:
+        # Inserir 150 registros
+        for i in range(150):
+            conn.execute(
+                "INSERT INTO historico_chat (pergunta, resposta, modelo) VALUES (?,?,?)",
+                (f"pergunta_{i}", f"resposta_{i}", "test")
+            )
+        conn.commit()
+        
+        # Verificar que inserimos 150
+        total_antes = conn.execute("SELECT COUNT(*) as c FROM historico_chat").fetchone()["c"]
+        assert total_antes == 150
+        
+        # Chamar limpeza
+        _limpar_historico_chat(conn)
+        
+        # Verificar que apenas 100 restam
+        total_depois = conn.execute("SELECT COUNT(*) as c FROM historico_chat").fetchone()["c"]
+        assert total_depois == HISTORICO_CHAT_MAX_RETENCAO
+        
+        # Verificar que manteve os últimos (maiores IDs)
+        ids = conn.execute("SELECT id FROM historico_chat ORDER BY id").fetchall()
+        id_minimo = ids[0]["id"]
+        assert id_minimo == 51  # 150 - 100 + 1
+        assert ids[-1]["id"] == 150
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # LLM falha completamente (timeout, etc.) → assistente degrada graciosamente
 # ---------------------------------------------------------------------------

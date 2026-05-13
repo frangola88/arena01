@@ -19,6 +19,28 @@ from core.sql_safe import (
 
 _log = logging.getLogger("casaiq.assistente")
 
+HISTORICO_CHAT_MAX_RETENCAO = 100
+
+
+def _limpar_historico_chat(db_conn: object) -> None:
+    """Limpa registros antigos de historico_chat, mantendo apenas os últimos N.
+    
+    Executa após INSERT para evitar crescimento ilimitado da tabela.
+    """
+    try:
+        db_conn.execute(f"""
+            DELETE FROM historico_chat
+            WHERE id NOT IN (
+                SELECT id FROM historico_chat
+                ORDER BY id DESC
+                LIMIT {HISTORICO_CHAT_MAX_RETENCAO}
+            )
+        """)
+        db_conn.commit()
+    except Exception as e:
+        _log.error("erro_limpeza_historico", extra={"erro": str(e)})
+
+
 PROMPT_SQL = """
 Converta a pergunta em SQL SELECT para o banco de inventario domestico.
 
@@ -102,6 +124,7 @@ def chat(pergunta: str, db_conn) -> dict:
             (pergunta, resposta, modelo_usado)
         )
         db_conn.commit()
+        _limpar_historico_chat(db_conn)
     except Exception as e:
         _log.error("erro_historico", extra={"erro": str(e)})
 
