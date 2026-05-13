@@ -153,6 +153,8 @@ Legenda: ✅ pronto · 🟡 com dívida conhecida · ⚪ sem testes diretos · �
 | 13 | `e31cc8f` | **backup automático**: scripts + retenção 30d + BACKUP.md (pendência #1) | 0 |
 | 14 | `40720e1` | **docs**: STATUS.md atualizado com pendências #1, #6 | 0 |
 | 15 | `68dc154` | **cobertura agent_4_icone**: 7 testes para 98% (pendência #3) | +7 |
+| 16 | `30fca4d` | **docs**: STATUS.md atualizado com pendência #3 | 0 |
+| 17 | `d39bfd3` | **README**: guia completo onboarding (pendência #7) | 0 |
 
 **Total**: 252 testes; suite roda em **~1.6 segundos**; passa com
 `pytest -W error::DeprecationWarning`.
@@ -221,7 +223,7 @@ tests/test_logging_config.py      6 testes  (JSONFormatter + setup)
 | 4 | **`set_authorizer` no `conectar_readonly`** | 1h | alto | Bloquear `SQLITE_ATTACH`/`DETACH` no nível do engine via callback nativo. Camada 4 que faltava no `sql_safe` — hoje só o validador textual rejeita ATTACH. |
 | 5 | **Bound em `historico_chat`** (DELETE com retenção) | 1h | médio | Tabela cresce sem teto. Impacto principal: tamanho do arquivo `.db` e INSERT performance (B-tree). `GET /chat/historico` já tem `LIMIT 20`, então leitura via UI não sofre. `historico_chat` está na blacklist do `schema_para_prompt`, então PRAGMA não regride. |
 | 6 | ✅ **Smoke test para `/api/videos/ingerir`** | 30 min | médio | Feito: 4 testes (upload, status, validação extensão, 404s). Suite 245 testes. |
-| 7 | **README de uso** | 1h | alto | Onboarding em outras máquinas. |
+| 7 | ✅ **README de uso** | 1h | alto | Feito: 52 → 329 linhas. Início rápido, estrutura, dev, troubleshooting. |
 | 8 | **Pre-commit hook rodando pytest** | 30 min | médio | Reforça CI localmente. |
 
 ### Médio prazo (≤ 1 dia)
