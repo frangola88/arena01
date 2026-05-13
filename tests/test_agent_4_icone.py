@@ -472,3 +472,126 @@ class TestGerarIcone:
 
         # Verifica ordem: recorte (alta), web, recorte (baixa), claude
         assert ordem_chamadas == ["recorte", "web", "recorte", "claude"]
+
+
+# ============================================================================
+# Testes: Cobertura adicional — edge cases não cobertas
+# ============================================================================
+
+class TestCoberturaAdicional:
+    """Testes para as 7 linhas não cobertas (target ~100%)."""
+
+    def test_desenho_poligono_poucos_pontos(self, temp_icone_dir):
+        """Linha 118: poligono com < 6 pontos (ignorado silenciosamente)."""
+        instrucoes = {
+            "fundo": [255, 255, 255],
+            "formas": [
+                {"tipo": "poligono", "pontos": [50, 50, 200, 50],  # Só 4 pontos
+                 "cor": [0, 255, 0]},
+            ],
+        }
+        saida = temp_icone_dir / "icone.png"
+        ok = _executar_desenho_PIL(instrucoes, str(saida))
+        # Deve suceder (forma ignorada, não erro)
+        assert ok is True
+        assert saida.exists()
+
+    def test_placeholder_emoji_invalido_fallback_retangulo(self, temp_icone_dir):
+        """Linhas 168-169: emoji inválido → fallback para retângulo."""
+        saida = temp_icone_dir / "icone.png"
+        # Emoji que pode falhar em draw.text (controle de altura)
+        ok = _placeholder_PIL("Objeto teste", "\x00", "Casa", str(saida))
+        assert ok is True
+        assert saida.exists()
+
+    def test_placeholder_exception_em_save(self, temp_icone_dir):
+        """Linhas 174-176: exceção durante save (improvável mas testado)."""
+        # Patch Image.save para falhar
+        with patch("agents.agent_4_icone.Image.new") as mock_img_class:
+            mock_img = MagicMock()
+            mock_img.save.side_effect = OSError("Espaço em disco cheio")
+            mock_img_class.return_value = mock_img
+
+            saida = temp_icone_dir / "icone.png"
+            ok = _placeholder_PIL("Teste", "📦", "Casa", str(saida))
+            assert ok is False
+
+    def test_cascata_recorte_baixa_confianca_sucede(self, imagem_recorte, temp_icone_dir, monkeypatch):
+        """Linha 207: estratégia 3 (recorte com confiança 0.3-0.75) sucede."""
+        monkeypatch.setattr("agents.agent_4_icone.ICONES_DIR", temp_icone_dir)
+
+        # Confiança entre 0.3 e 0.75: pula estratégia 1 (confiança < 0.75),
+        # falha web (nome útil), tenta recorte_baixa (confiança >= 0.3)
+        with patch("agents.agent_4_icone._recorte_como_icone") as mock_recorte:
+            mock_recorte.return_value = True  # Estratégia 3 sucede
+            with patch("agents.agent_4_icone._buscar_imagem_web", return_value=False):
+                caminho, fonte = gerar_icone(
+                    recorte_path=imagem_recorte,
+                    nome="Produto com baixa confiança",
+                    categoria_nome="Casa",
+                    icone_emoji="📦",
+                    grupo="Casa",
+                    confianca=0.50,  # Entre 0.3 e 0.75
+                    objeto_id=100,
+                )
+                # Deve chamar _recorte_como_icone 1 vez (estratégia 3)
+                # (estratégia 1 é pulada por confiança < 0.75)
+                assert mock_recorte.call_count == 1
+                assert fonte == "recorte_baixa_qualidade"
+
+    def test_cascata_recorte_sem_path_baixa_confianca_ignora(self, temp_icone_dir, monkeypatch):
+        """Linha 205-207: se recorte_path é None, estratégia 3 é pulada."""
+        monkeypatch.setattr("agents.agent_4_icone.ICONES_DIR", temp_icone_dir)
+
+        with patch("agents.agent_4_icone._recorte_como_icone") as mock_recorte:
+            with patch("agents.agent_4_icone._buscar_imagem_web", return_value=False):
+                with patch("agents.agent_4_icone._claude_desenha", return_value=True):
+                    caminho, fonte = gerar_icone(
+                        recorte_path=None,  # Sem recorte
+                        nome="Produto sem foto",
+                        categoria_nome="Geral",
+                        icone_emoji="?",
+                        grupo="Geral",
+                        confianca=0.50,
+                        objeto_id=101,
+                    )
+                    # _recorte_como_icone nunca deve ser chamado (recorte_path é None)
+                    assert mock_recorte.call_count == 0
+                    assert fonte == "claude_desenho"
+
+    @patch("agents.agent_4_icone.ANTHROPIC_API_KEY", "fake-key")
+    @patch("anthropic.Anthropic")
+    @patch("agents.agent_4_icone._executar_desenho_PIL")
+    def test_claude_desenha_json_invalido(self, mock_pil, mock_client_class, temp_icone_dir):
+        """Linha 212: Claude retorna JSON inválido → fallback."""
+        # Mock do Claude retornando JSON inválido
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="não é JSON")]
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        # Mock do PIL falhando
+        mock_pil.return_value = False
+
+        saida = temp_icone_dir / "icone.png"
+        ok = _claude_desenha("Chave de fenda", str(saida))
+        assert ok is False
+
+    @patch("agents.agent_4_icone.ANTHROPIC_API_KEY", "fake-key")
+    @patch("anthropic.Anthropic")
+    @patch("agents.agent_4_icone._executar_desenho_PIL")
+    def test_claude_json_valido_pil_falha(self, mock_pil, mock_client_class, temp_icone_dir):
+        """Linha 150-151: Claude retorna JSON válido mas PIL falha."""
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text='{"fundo":[255,255,255],"formas":[]}')]
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+        mock_client_class.return_value = mock_client
+
+        # PIL falha
+        mock_pil.return_value = False
+
+        saida = temp_icone_dir / "icone.png"
+        ok = _claude_desenha("Objeto", str(saida))
+        assert ok is False
