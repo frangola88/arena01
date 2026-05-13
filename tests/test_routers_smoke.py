@@ -218,3 +218,70 @@ def test_chat_historico_vazio_retorna_lista_vazia(client):
     r = client.get("/api/chat/historico")
     assert r.status_code == 200
     assert r.json() == []
+
+
+# ---------------------------------------------------------------------------
+# /api/videos
+# ---------------------------------------------------------------------------
+
+def test_videos_ingerir_e_consultar_status(client, mocker):
+    """Upload → registra vídeo pendente, dispara BackgroundTask (mockado)."""
+    mock_proc = mocker.patch("api.routes.videos.processar_video")
+
+    r = client.post("/api/localizacoes", json={"nome": "Sala"})
+    loc_id = r.json()["id"]
+
+    arquivo_mp4 = io.BytesIO(b"\x00\x00\x00\x20ftypisom")
+    r = client.post(
+        "/api/videos/ingerir",
+        data={"localizacao_id": str(loc_id)},
+        files={"arquivo": ("teste.mp4", arquivo_mp4, "video/mp4")},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["status"] == "pendente"
+    video_id = body["video_id"]
+
+    # Background task foi enfileirada com os args certos
+    mock_proc.assert_called_once()
+    args = mock_proc.call_args.args
+    assert args[1] == loc_id and args[2] == video_id
+
+    # GET status — ainda 'pendente' ou já 'processando'
+    r = client.get(f"/api/videos/{video_id}/status")
+    assert r.status_code == 200
+    s = r.json()
+    assert s["id"] == video_id
+    assert s["status"] in {"pendente", "processando", "concluido", "erro"}
+
+
+def test_videos_ingerir_extensao_invalida_responde_400(client, mocker):
+    mocker.patch("api.routes.videos.processar_video")
+    r = client.post("/api/localizacoes", json={"nome": "Quintal"})
+    loc_id = r.json()["id"]
+
+    arquivo = io.BytesIO(b"qualquer coisa")
+    r = client.post(
+        "/api/videos/ingerir",
+        data={"localizacao_id": str(loc_id)},
+        files={"arquivo": ("doc.pdf", arquivo, "application/pdf")},
+    )
+    assert r.status_code == 400
+    assert "extens" in r.json()["detail"].lower()
+
+
+def test_videos_ingerir_localizacao_inexistente_responde_404(client, mocker):
+    mocker.patch("api.routes.videos.processar_video")
+    arquivo = io.BytesIO(b"\x00\x00\x00\x20ftypisom")
+    r = client.post(
+        "/api/videos/ingerir",
+        data={"localizacao_id": "99999"},
+        files={"arquivo": ("teste.mp4", arquivo, "video/mp4")},
+    )
+    assert r.status_code == 404
+    assert "localiz" in r.json()["detail"].lower()
+
+
+def test_videos_status_inexistente_responde_404(client):
+    r = client.get("/api/videos/99999/status")
+    assert r.status_code == 404
