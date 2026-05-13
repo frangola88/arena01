@@ -7,6 +7,7 @@ casaiq.db
 casaiq.db-shm
 casaiq.db-wal
 casaiq.db.bak.*
+.backups/
 
 # Storage (fotos, vídeos, recortes, ícones, keyframes)
 storage/
