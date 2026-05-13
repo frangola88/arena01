@@ -7,6 +7,7 @@ import logging
 import sqlite3
 from datetime import datetime, date
 from core.config import DB_PATH
+from core.migrations_runner import run_migrations
 
 _log = logging.getLogger("casaiq.database")
 
@@ -57,16 +58,26 @@ def init_db() -> None:
     """Cria tabelas e popula dados iniciais. Idempotente."""
     conn = get_db()
     try:
-        conn.executescript(SCHEMA_SQL)
+        # Aplicar migrações versionadas
+        result = run_migrations(conn)
+        _log.info(
+            "migrações_aplicadas",
+            extra={
+                "aplicadas": len(result["applied"]),
+                "saltadas": len(result["skipped"]),
+            },
+        )
+
+        # Popula dados iniciais (seed) — idempotente com INSERT OR IGNORE
         conn.executescript(SEED_SQL)
-        # Migração leve: adiciona `progresso` se ainda não existir.
-        for tabela in ("fotos_processadas", "videos_processados"):
-            try:
-                conn.execute(f"ALTER TABLE {tabela} ADD COLUMN progresso TEXT DEFAULT ''")
-            except sqlite3.OperationalError:
-                pass  # coluna já existe
         conn.commit()
         _log.info("banco_inicializado")
+
+    except Exception as e:
+        conn.rollback()
+        _log.error("erro_ao_inicializar_banco", extra={"erro": str(e)})
+        raise
+
     finally:
         conn.close()
 
