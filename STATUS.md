@@ -146,8 +146,13 @@ Legenda: ✅ pronto · 🟡 com dívida conhecida · ⚪ sem testes diretos · �
 | 6 | `79405b7` | **logging estruturado JSON** nas decisões do roteador | +31 |
 | 7 | `f0ee274` | **schema dinâmico** no PROMPT_SQL via PRAGMA | +5 |
 | 8 | `11ea85a` | **migração prints → logger** em 9 arquivos (consistência total) | 0 |
+| 9 | `48ca12f` | **pytest-cov**: `--cov-fail-under=80` no CI (pendência #2) | 0 |
+| 10 | `cc129f1` | **set_authorizer**: bloqueia ATTACH/DETACH em RO connection (pendência #4) | 0 |
+| 11 | `08e0411` | **bound historico_chat**: retenção automática, delete com trigger (pendência #5) | 0 |
+| 12 | `d285cff` | **smoke tests vídeos**: `/api/videos/ingerir` + status (pendência #6) | +34 |
+| 13 | `e31cc8f` | **backup automático**: scripts + retenção 30d + BACKUP.md (pendência #1) | 0 |
 
-**Total**: 211 testes; suite roda em **1.0 a 1.2 segundos**; passa com
+**Total**: 245 testes; suite roda em **~1.8 segundos**; passa com
 `pytest -W error::DeprecationWarning`.
 
 ---
@@ -208,12 +213,12 @@ tests/test_logging_config.py      6 testes  (JSONFormatter + setup)
 
 | # | Item | Esforço | Valor | Pendente porque |
 |---:|---|---:|---|---|
-| 1 | **Backup automático do `casaiq.db`** | 1h | **alto** | DB é o coração do produto local-first. Solução: cron diário + `sqlite3 casaiq.db ".backup '/backup/casaiq_$(date +%F).db'"` (lida com WAL nativamente). |
+| 1 | ✅ **Backup automático do `casaiq.db`** | 1h | **alto** | Feito: `scripts/backup_db.sh` + `restore_db.sh` + `BACKUP.md`. Cron job manual via `crontab -e`. Retenção de 30 dias automática. |
 | 2 | **`pytest-cov` no CI com `--cov-fail-under=80`** | 30 min | alto | Conta de testes ≠ cobertura. Provavelmente revela buracos concretos em `agent_4_icone.py` e nas branches de fallback do `core/llm.py`. |
 | 3 | **Testes unitários do `agent_4_icone`** | 2h | alto | 4 estratégias em cascata com fallbacks condicionais (recorte→web→Claude→PIL). Único agente onde integration tests são insuficientes — outros 3 agentes ficam em médio prazo. |
 | 4 | **`set_authorizer` no `conectar_readonly`** | 1h | alto | Bloquear `SQLITE_ATTACH`/`DETACH` no nível do engine via callback nativo. Camada 4 que faltava no `sql_safe` — hoje só o validador textual rejeita ATTACH. |
 | 5 | **Bound em `historico_chat`** (DELETE com retenção) | 1h | médio | Tabela cresce sem teto. Impacto principal: tamanho do arquivo `.db` e INSERT performance (B-tree). `GET /chat/historico` já tem `LIMIT 20`, então leitura via UI não sofre. `historico_chat` está na blacklist do `schema_para_prompt`, então PRAGMA não regride. |
-| 6 | **Smoke test para `/api/videos/ingerir`** | 30 min | médio | Único router sem cobertura própria. |
+| 6 | ✅ **Smoke test para `/api/videos/ingerir`** | 30 min | médio | Feito: 4 testes (upload, status, validação extensão, 404s). Suite 245 testes. |
 | 7 | **README de uso** | 1h | alto | Onboarding em outras máquinas. |
 | 8 | **Pre-commit hook rodando pytest** | 30 min | médio | Reforça CI localmente. |
 
