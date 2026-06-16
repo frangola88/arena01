@@ -60,6 +60,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: #fff; border-radius: 10px; padding: 10px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
   display: flex; flex-direction: column; gap: 6px;
+  position: relative; overflow: hidden;
 }
 .card-objeto img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; background: #eee; }
 .card-objeto .nome { font-weight: 600; font-size: 0.95rem; }
@@ -122,9 +123,63 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   background: transparent; color: #555; font-size: 1.5rem;
 }
 .modal-conteudo img { max-width: 100%; border-radius: 6px; }
+.modal-imagem-container {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; max-width: 400px; margin: 15px auto;
+  background: #f8f9fa; border-radius: 8px; padding: 10px;
+  aspect-ratio: 1 / 1; overflow: hidden;
+}
+.modal-imagem {
+  width: 100%; height: 100%;
+  object-fit: contain; border-radius: 6px;
+}
 .modal-conteudo dl { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; }
 .modal-conteudo dt { color: #666; font-size: 0.85rem; }
 .modal-conteudo dd { margin: 0; font-size: 0.95rem; }
+
+/* ── Viewer de foto original (clique direito no card) ─────────────────────── */
+.foto-viewer-overlay {
+  position: fixed; inset: 0; z-index: 60; background: transparent;
+}
+.foto-viewer-overlay[hidden] { display: none; }
+
+.foto-viewer {
+  position: fixed; top: 50%; right: 24px; transform: translateY(-50%);
+  z-index: 61; background: #1a1f2b; border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  padding: 14px; width: min(480px, 90vw);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.foto-viewer[hidden] { display: none; }
+
+.foto-viewer-fechar {
+  position: absolute; top: 8px; right: 10px;
+  background: transparent; color: #8b9ab0; font-size: 1.6rem;
+  line-height: 1; border: none; cursor: pointer; padding: 0 4px;
+}
+.foto-viewer-fechar:hover { color: #fff; }
+
+.foto-viewer-titulo {
+  color: #c8d4e3; font-size: 0.85rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding-right: 28px;
+}
+
+.foto-viewer-img {
+  width: 100%; border-radius: 8px;
+  max-height: 70vh; object-fit: contain; background: #111;
+}
+
+/* Dica visual no card: cursor direito */
+.card-objeto { cursor: pointer; }
+.card-objeto:hover::after {
+  content: "clique direito = foto original";
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.7); color: #fff;
+  font-size: 0.65rem; white-space: nowrap;
+  padding: 2px 6px; border-radius: 4px; pointer-events: none;
+  opacity: 0.85;
+}
 
 footer#rodape {
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -132,3 +187,159 @@ footer#rodape {
   font-size: 0.85rem; text-align: center;
 }
 #badge-modo { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+/* Progress Component Styles */
+.progress-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 10px; padding: 20px; margin: 20px 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+.progress-description {
+  display: flex; align-items: center; gap: 15px; margin-bottom: 15px;
+}
+
+.etapa-icon {
+  font-size: 2em; min-width: 40px; text-align: center;
+}
+
+.description-text {
+  flex: 1;
+}
+
+.description-text .etapa-nome {
+  margin: 0; font-weight: bold; font-size: 1.1em;
+  color: #2c3e50;
+}
+
+.description-text .descricao-detalhe {
+  margin: 5px 0 0 0; color: #666; font-size: 0.95em;
+}
+
+.progress-bar-container {
+  margin: 15px 0;
+}
+
+.progress-bar {
+  background: #ecf0f1; border-radius: 10px; height: 25px;
+  overflow: hidden; border: 2px solid #3498db;
+}
+
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, #3498db, #2ecc71);
+  transition: width 0.3s ease;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 8px; color: white; font-weight: bold; font-size: 0.85em;
+}
+
+.progress-label {
+  text-align: center; font-size: 0.9em; color: #555; margin-top: 5px;
+}
+
+.progress-timing {
+  display: flex; gap: 20px; justify-content: center;
+  font-size: 0.95em; color: #7f8c8d; margin-top: 10px;
+}
+
+.tempo-decorrido, .tempo-restante {
+  font-weight: 500;
+}
+
+.progress-actions {
+  margin-top: 15px; display: flex; gap: 10px; justify-content: center;
+}
+
+.btn-cancelar {
+  background: #e74c3c; color: white; border: none;
+  padding: 10px 20px; border-radius: 6px; font-size: 0.95em;
+  font-weight: bold; cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+.btn-cancelar:hover:not(:disabled) {
+  background: #c0392b; transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+.btn-cancelar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-cancelar:disabled {
+  background: #bdc3c7; cursor: not-allowed; opacity: 0.7;
+}
+
+.progress-error {
+  background: #ffe6e6; border-left: 4px solid #e74c3c;
+  padding: 10px; margin-top: 10px; border-radius: 4px;
+  color: #c0392b;
+}
+
+.btn-debug-visual {
+  display: inline-block;
+  background: #34495e;
+  color: #fff !important;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.92em;
+  box-shadow: 0 2px 4px rgba(52, 73, 94, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-debug-visual:hover {
+  background: #2c3e50;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(52, 73, 94, 0.4);
+}
+
+/* ─── Zona de Perigo: Reset do banco ─── */
+.zona-perigo {
+  margin-top: 40px;
+  padding: 20px;
+  background: #fff5f5;
+  border: 2px dashed #e74c3c;
+  border-radius: 10px;
+}
+.zona-perigo h3 {
+  margin: 0 0 8px 0;
+  color: #c0392b;
+  font-size: 1.05rem;
+}
+.zona-perigo-aviso {
+  margin: 0 0 12px 0;
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.reset-stats {
+  background: #fff;
+  border: 1px solid #f4c2c2;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  color: #444;
+  margin-bottom: 12px;
+}
+.btn-perigo {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(192, 57, 43, 0.3);
+}
+.btn-perigo:hover:not(:disabled) {
+  background: #a93226;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(192, 57, 43, 0.4);
+}
+.btn-perigo:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}

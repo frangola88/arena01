@@ -61,6 +61,11 @@ def enriquecer_objeto(analise: dict, categorias_disponiveis: list[str]) -> dict:
         )
         resposta, _ = chamar_texto(prompt, tarefa=TarefaTexto.ENRIQUECIMENTO)
         dados = extrair_json(resposta)
+        # LLM às vezes retorna lista em vez de objeto — pega o primeiro item
+        if isinstance(dados, list):
+            dados = dados[0] if dados else {}
+        if not isinstance(dados, dict):
+            dados = {}
         resultado["categoria_nome"] = dados.get("categoria", "Outros")
         resultado["nome"] = dados.get("nome_normalizado") or analise.get("nome", "")
         todas = list(analise.get("palavras_chave", []))

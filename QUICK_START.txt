@@ -1,0 +1,157 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    🚀 BATCH SCRAPING AUTÔNOMO                            ║
+║                    Ready to Deploy - Zero Supervision                     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📊 STATUS ATUAL (2026-05-30)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ COMPLETADO:
+  ✓ Fase 1: 3 spiders rodando em paralelo (mouser, digi-key, screwfix)
+    - Estimado: ~380k itens em 4-8h
+  ✓ Script orquestrador: scraping_orchestrator.py
+  ✓ Wrapper para background: start_batch_scraping.sh
+  ✓ Scripts de monitoramento do Fedora
+  ✓ Documentação completa: BATCH_SCRAPING.md
+
+📦 DADOS JÁ COLETADOS:
+  • Brasil consolidado: 13,048 itens
+  • Fase 1 (em coleta): ~380k potencial
+  • Batch futuro: ~1.42M total viável
+
+⏱️ TIMELINE:
+  • Fase 1 (ativa): 4-8h (mouser+digi-key+screwfix)
+  • Batch autônomo: 10-12h (11 spiders)
+  • Total possível: 1-2 semanas com todas as fases
+
+
+🎯 COMO USAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣  INICIAR BATCH (de qualquer lugar com SSH)
+
+    ssh oracle-casaiq "cd ~/casaiq_scraper && ./start_batch_scraping.sh"
+
+    → Retorna: PID e URL do log
+
+
+2️⃣  MONITORAR PROGRESSO (do Fedora)
+
+    ~/projetos/casaiq/scripts/monitor_batch.sh
+
+    → Mostra: status, últimas linhas, relatórios gerados
+
+
+3️⃣  QUANDO TERMINAR (puxar relatório)
+
+    ~/projetos/casaiq/scripts/fetch_batch_report.sh
+
+    → Cria ~/casaiq_batch_reports/ com JSON e resumo
+
+
+📁 ARQUIVOS CRIADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Oracle VM (~casaiq_scraper/):
+  ✓ scraping_orchestrator.py    (orquestrador Python)
+  ✓ start_batch_scraping.sh     (wrapper para background)
+  ✓ logs/batch_YYYYMMDD.log     (logs de execução)
+  ✓ batch_reports/batch_YYYYMMDD.json  (relatório final)
+
+Fedora (~projetos/casaiq/):
+  ✓ BATCH_SCRAPING.md           (documentação completa)
+  ✓ scripts/monitor_batch.sh    (monitorar do Fedora)
+  ✓ scripts/fetch_batch_report.sh (puxar relatório)
+
+
+🔧 SPIDERS DO BATCH AUTÔNOMO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Rank | Site                    | País  | Itens   | Prioridade
+-----|-------------------------|-------|---------|------------
+ 1   | obi.de                  | 🇩🇪   | 400k+   | 🔥🔥🔥
+ 2   | toolup.com              | 🇮🇪   | 200k+   | 🔥🔥🔥
+ 3   | cdiscount.com           | 🇫🇷   | 150k    | 🔥🔥
+ 4   | rs-online.com           | 🇬🇧   | 200k+   | 🔥🔥
+ 5   | baumarkt.de             | 🇩🇪   | 50k     | 🔥
+ 6   | toolstation.com         | 🇬🇧   | 80k     | 🔥
+ 7   | screwfix.de             | 🇩🇪   | 100k    | 🔥
+ 8   | heilind.com             | 🇺🇸   | 100k    | 🔥
+ 9   | brico.it                | 🇮🇹   | 30k     | 🔥
+10   | ferreteria.net          | 🇪🇸   | 40k     | 🔥
+11   | leroy_merlin.com.br     | 🇧🇷   | 50k     | 🔥
+
+TOTAL: ~1.42 MILHÕES DE ITENS
+
+
+⚙️ COMO FUNCIONA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Executa spiders em SEQUÊNCIA (não paralelo — respeita rate limits)
+
+✅ Se um spider FALHA:
+   • ⚠️  Registra como PARTIAL ou ERROR
+   • 🔄 Continua para o PRÓXIMO spider
+   • 📝 Salva erro em logs/spider_NOME.log
+   → NADA quebra o batch!
+
+✅ Finaliza com relatório JSON:
+   • batch_id, total_spiders, successful, partial, errors
+   • total_items coletados
+   • duration_seconds total
+   • Resultado detalhado de cada spider
+
+✅ Logs estruturados para debug:
+   • logs/batch_YYYYMMDD.log      (timeline completa)
+   • logs/spider_NAME_YYYYMMDD.log (erro específico)
+   • batch_reports/batch_YYYYMMDD.json (machine-readable)
+
+
+🎬 PRÓXIMOS PASSOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Quando o batch terminar:
+
+1. Puxar dados do Oracle para Fedora
+2. Enriquecer com Claude Haiku (normalizar nomes, classificar)
+3. Push para HuggingFace Hub (privado)
+4. Fine-tune Qwen2-VL 7B no Google Colab Pro (T4)
+5. Export GGUF Q4_K_M
+6. Deploy no Ollama local
+7. Integrar ao agent_1 do CasaIQ
+
+
+📋 TROUBLESHOOTING RÁPIDO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problema: "Batch não iniciou"
+→ ssh oracle-casaiq "ls ~/casaiq_scraper/"
+→ Confirmar que scraping_orchestrator.py existe
+
+Problema: "Perdeu conexão SSH"
+→ Batch continua rodando em background (nohup)
+→ Reconectar e usar monitor_batch.sh
+
+Problema: "Quer cancelar batch"
+→ ssh oracle-casaiq "kill $(cat ~/casaiq_scraper/.batch_orchestrator.pid)"
+
+Problema: "Ver dados parciais antes de terminar"
+→ ssh oracle-casaiq "ls -lh ~/casaiq_scraper/data/export/"
+
+
+✨ RESUMO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Você tem:
+✓ Script autônomo pronto
+✓ 11 spiders mapeados e rankados
+✓ Sistema robusto de logs
+✓ Ferramentas de monitoramento
+✓ Documentação completa
+
+Tudo o que precisa fazer:
+1. ssh oracle-casaiq "cd ~/casaiq_scraper && ./start_batch_scraping.sh"
+2. Esperar 10-12h
+3. ~/projetos/casaiq/scripts/fetch_batch_report.sh
+
+E terá 1.42 MILHÕES de items de ferramentas e eletrônicos 🚀

@@ -15,10 +15,23 @@ _log = logging.getLogger("casaiq.agent_2")
 
 PROMPT_ANALISE = """
 Analise o objeto "{nome}" nesta imagem.
+
+REGRAS CRITICAS PARA O CAMPO "nome":
+- Use o nome GENERICO MAIS SIMPLES. Exemplo: "chave de fenda" (NAO "chave de fenda phillips com cabo vermelho").
+- NAO inclua cor, material ou tamanho no nome. Esses sao campos separados.
+- So especifique o tipo (phillips/fenda chata/etc) se VISIVELMENTE confirmado na imagem (ex: ponta em X visivel para phillips).
+- Em duvida sobre o tipo, use o termo generico ("chave de fenda" sem subtipo).
+- NUNCA chame uma chave de fenda chata de "phillips".
+
+REGRAS CRITICAS PARA "confianca":
+- 0.9+ apenas se voce ve o objeto claramente e tem certeza do que e.
+- 0.6-0.8 se tem ideia mas alguns detalhes sao incertos.
+- < 0.5 se a imagem e ambigua ou esta parcialmente obstruida.
+
 Responda APENAS com JSON valido (sem texto fora do JSON):
 {{
-  "nome": "nome especifico do objeto",
-  "descricao": "1-2 frases",
+  "nome": "chave de fenda",
+  "descricao": "1-2 frases descritivas",
   "cor": "cor(es) principais",
   "tamanho": "pequeno",
   "tamanho_estimado_cm": "LxAxP estimado",
@@ -31,7 +44,6 @@ Responda APENAS com JSON valido (sem texto fora do JSON):
 }}
 Valores de "tamanho": pequeno | medio | grande
 Valores de "estado": novo | bom | regular | ruim
-"confianca": 0.0 (incerto) a 1.0 (certeza)
 """
 
 

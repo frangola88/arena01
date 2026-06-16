@@ -30,6 +30,8 @@ def _ollama_visao(prompt: str, imagem_path: str) -> str:
     """
     Chamada de visão via Ollama.
     images= recebe o CAMINHO DO ARQUIVO (string) — a lib encoda internamente.
+    think=False: desabilita o modo de raciocínio do qwen3-vl (que consome todos os
+    tokens na fase de thinking e deixa message.content vazio).
     """
     resultado, excecao = [None], [None]
     def _run():
@@ -37,6 +39,7 @@ def _ollama_visao(prompt: str, imagem_path: str) -> str:
             resp = ollama.chat(
                 model=get_vision_model(),
                 messages=[{"role": "user", "content": prompt, "images": [imagem_path]}],
+                think=False,
             )
             resultado[0] = resp["message"]["content"]
         except Exception as e:
@@ -57,6 +60,7 @@ def _ollama_texto(prompt: str) -> str:
             resp = ollama.chat(
                 model=get_text_model(),
                 messages=[{"role": "user", "content": prompt}],
+                think=False,
             )
             resultado[0] = resp["message"]["content"]
         except Exception as e:
@@ -73,35 +77,55 @@ def _ollama_texto(prompt: str) -> str:
 # --- Claude API --------------------------------------------------------------
 
 def _claude_visao(prompt: str, imagem_path: str) -> str:
-    import anthropic, base64
+    """Chama Claude API via httpx direto — bypass do SDK 0.97+ que tem bug de connection."""
+    import base64, json, httpx
     ext = Path(imagem_path).suffix.lower()
     mt  = {".jpg": "image/jpeg", ".jpeg": "image/jpeg",
            ".png": "image/png",  ".webp": "image/webp"}.get(ext, "image/jpeg")
     with open(imagem_path, "rb") as f:
         data = base64.standard_b64encode(f.read()).decode()
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    resp = client.messages.create(
-        model=ANTHROPIC_MODEL, max_tokens=1024,
-        messages=[{"role": "user", "content": [
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    }
+    body = {
+        "model": ANTHROPIC_MODEL,
+        "max_tokens": 8192,
+        "messages": [{"role": "user", "content": [
             {"type": "image", "source": {"type": "base64", "media_type": mt, "data": data}},
             {"type": "text",  "text": prompt},
         ]}],
-    )
+    }
+    r = httpx.post("https://api.anthropic.com/v1/messages",
+                   headers=headers, json=body, timeout=120)
+    if r.status_code != 200:
+        raise RuntimeError(f"Claude API {r.status_code}: {r.text[:300]}")
+    resp = r.json()
     _log.info("claude_visao_chamada", extra={"modelo": ANTHROPIC_MODEL})
-    return resp.content[0].text
+    return resp["content"][0]["text"]
 
 
 def _claude_texto(prompt: str, max_tokens: int = 512) -> str:
-    import anthropic
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    resp = client.messages.create(
-        model=ANTHROPIC_MODEL, max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    _log.info("claude_texto_chamada", extra={
-        "modelo": ANTHROPIC_MODEL, "max_tokens": max_tokens,
-    })
-    return resp.content[0].text
+    """Chama Claude API via httpx direto — bypass do SDK 0.97+ que tem bug de connection."""
+    import json, httpx
+    headers = {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    }
+    body = {
+        "model": ANTHROPIC_MODEL,
+        "max_tokens": max_tokens,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    r = httpx.post("https://api.anthropic.com/v1/messages",
+                   headers=headers, json=body, timeout=60)
+    if r.status_code != 200:
+        raise RuntimeError(f"Claude API {r.status_code}: {r.text[:300]}")
+    resp = r.json()
+    _log.info("claude_texto_chamada", extra={"modelo": ANTHROPIC_MODEL, "max_tokens": max_tokens})
+    return resp["content"][0]["text"]
 
 
 # --- Funções públicas (usadas pelos agentes) ---------------------------------
@@ -159,12 +183,19 @@ def chamar_texto(prompt: str, tarefa: TarefaTexto = TarefaTexto.RESPOSTA_CHAT,
 def extrair_json(texto: str):
     """
     Extrai JSON de resposta de modelo que pode conter texto extra.
+    Remove blocos <think>...</think> do qwen3 antes de parsear.
     Não usa backtick no código para não quebrar blocos Markdown.
     """
+    if not texto or not texto.strip():
+        raise ValueError("Resposta vazia do modelo")
+    # Remove thinking do qwen3/qwen2.5 que pode vazar para o content
+    texto = re.sub(r'<think>.*?</think>', '', texto, flags=re.DOTALL)
     texto = texto.strip()
-    linhas = [l for l in texto.splitlines()
-              if l.strip().lower() not in ("json", "python", "")]
-    texto = "\n".join(linhas).strip()
+    # Remove fences markdown (```json ... ``` ou ``` ... ```)
+    texto = re.sub(r'^```[a-z]*\s*\n?', '', texto)
+    if texto.endswith('```'):
+        texto = texto[:-3].rstrip()
+    texto = texto.strip()
     try:
         return json.loads(texto)
     except json.JSONDecodeError:

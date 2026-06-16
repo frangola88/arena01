@@ -170,73 +170,28 @@ document.getElementById("form-ingerir").addEventListener("submit", async e => {
 
   try {
     const res = await fetchJSON(endpoint, { method: "POST", body: fd });
-    if (tipoSelecionado === "video") pollStatusVideo(res.video_id);
-    else                              pollStatusFoto(res.foto_id);
+    const fotoId = tipoSelecionado === "video" ? res.video_id : res.foto_id;
+    document.getElementById("status-ingestao").innerHTML = "";
+    
+    const progress = new ProcessingProgress(
+      fotoId,
+      "status-ingestao",
+      async () => {
+        document.getElementById("btn-processar").disabled = false;
+        carregarInventario(true);
+      },
+      () => {
+        document.getElementById("btn-processar").disabled = false;
+      }
+    );
+    progress.render();
+    progress.startPolling();
   } catch (err) {
     document.getElementById("status-ingestao").textContent = "Erro: " + err.message;
     document.getElementById("btn-processar").disabled = false;
   }
 });
 
-async function pollStatusFoto(fotoId) {
-  const status = document.getElementById("status-ingestao");
-  status.textContent = `Foto #${fotoId}: processando…`;
-  while (true) {
-    await new Promise(r => setTimeout(r, 3000));
-    try {
-      const info = await fetchJSON(`${API}/fotos/${fotoId}/status`);
-      status.textContent = `Foto #${fotoId}: ${info.status}` +
-        (info.objetos_encontrados ? ` — ${info.objetos_encontrados} objeto(s)` : "");
-      if (info.status === "concluido") {
-        renderObjetosDetectados(info.objetos || []);
-        document.getElementById("btn-processar").disabled = false;
-        carregarInventario(true);
-        return;
-      }
-      if (info.status === "erro") {
-        status.textContent = `Erro: ${info.erro_mensagem || "desconhecido"}`;
-        document.getElementById("btn-processar").disabled = false;
-        return;
-      }
-    } catch (e) {
-      status.textContent = "Erro ao consultar status: " + e.message;
-      document.getElementById("btn-processar").disabled = false;
-      return;
-    }
-  }
-}
-
-async function pollStatusVideo(videoId) {
-  const status = document.getElementById("status-ingestao");
-  status.textContent = `Vídeo #${videoId}: extraindo keyframes…`;
-  while (true) {
-    await new Promise(r => setTimeout(r, 3000));
-    try {
-      const info = await fetchJSON(`${API}/videos/${videoId}/status`);
-      const tot  = info.frames_extraidos   || 0;
-      const proc = info.frames_processados || 0;
-      let msg = `Vídeo #${videoId}: ${info.status}`;
-      if (tot)  msg += ` — frame ${proc}/${tot}`;
-      if (info.objetos_encontrados) msg += ` · ${info.objetos_encontrados} objeto(s)`;
-      status.textContent = msg;
-      if (info.status === "concluido") {
-        renderObjetosDetectados(info.objetos || []);
-        document.getElementById("btn-processar").disabled = false;
-        carregarInventario(true);
-        return;
-      }
-      if (info.status === "erro") {
-        status.textContent = `Erro: ${info.erro_mensagem || "desconhecido"}`;
-        document.getElementById("btn-processar").disabled = false;
-        return;
-      }
-    } catch (e) {
-      status.textContent = "Erro ao consultar status: " + e.message;
-      document.getElementById("btn-processar").disabled = false;
-      return;
-    }
-  }
-}
 
 function renderObjetosDetectados(objs) {
   const grid = document.getElementById("objetos-detectados");
@@ -245,12 +200,14 @@ function renderObjetosDetectados(objs) {
     const card = document.createElement("div");
     card.className = "card-objeto";
     const img = o.icone_path ? `/storage/icones/${o.icone_path.split("/").pop()}` : "";
+    const fotoUrl = o.foto_original_path ? `/${o.foto_original_path}` : "";
     card.innerHTML = `
       ${img ? `<img src="${img}" alt="${o.nome}" />` : ""}
       <div class="nome">${o.nome}</div>
       <div class="meta">conf ${(o.confianca || 0).toFixed(2)} <span class="badge-fonte">${badgeFonte(o.icone_fonte)}</span></div>
     `;
     card.addEventListener("click", () => abrirModalObjeto(o.id));
+    if (fotoUrl) card.addEventListener("contextmenu", e => { e.preventDefault(); abrirFotoOriginal(fotoUrl, o.nome); });
     grid.appendChild(card);
   }
 }
@@ -279,6 +236,7 @@ async function carregarInventario(_silencioso) {
       const card = document.createElement("div");
       card.className = "card-objeto";
       const img = o.icone_path ? `/storage/icones/${o.icone_path.split("/").pop()}` : "";
+      const fotoUrl = o.foto_original_path ? `/${o.foto_original_path}` : "";
       card.innerHTML = `
         ${img ? `<img src="${img}" alt="${o.nome}" />` : ""}
         <div class="nome">${o.nome}</div>
@@ -286,6 +244,7 @@ async function carregarInventario(_silencioso) {
         <div class="meta"><span class="badge-fonte">${badgeFonte(o.icone_fonte)}</span></div>
       `;
       card.addEventListener("click", () => abrirModalObjeto(o.id));
+      if (fotoUrl) card.addEventListener("contextmenu", e => { e.preventDefault(); abrirFotoOriginal(fotoUrl, o.nome); });
       grid.appendChild(card);
     }
     // popular filtro de categorias com base nos resultados (uma vez basta)
@@ -312,15 +271,22 @@ async function abrirModalObjeto(id) {
     const o = await fetchJSON(`${API}/objetos/${id}`);
     const corpo = document.getElementById("modal-corpo");
     const img = o.icone_path ? `/storage/icones/${o.icone_path.split("/").pop()}` : "";
+    
+    // Formatar peso estimado
+    const pesoFormatado = o.peso_estimado_g ? 
+      (o.peso_estimado_g >= 1000 ? `${(o.peso_estimado_g/1000).toFixed(1)} kg` : `${o.peso_estimado_g} g`) 
+      : "—";
+    
     corpo.innerHTML = `
       <h3>${o.nome}</h3>
-      ${img ? `<img src="${img}" alt="${o.nome}" />` : ""}
+      ${img ? `<div class="modal-imagem-container"><img src="${img}" alt="${o.nome}" class="modal-imagem" /></div>` : ""}
       <dl>
         <dt>Categoria</dt><dd>${o.categoria_nome || "—"}</dd>
         <dt>Localização</dt><dd>${o.localizacao_nome || "—"}${o.localizacao_comodo ? " (" + o.localizacao_comodo + ")" : ""}</dd>
         <dt>Cor</dt><dd>${o.cor || "—"}</dd>
         <dt>Tamanho</dt><dd>${o.tamanho || "—"}${o.tamanho_estimado_cm ? " · " + o.tamanho_estimado_cm : ""}</dd>
         <dt>Material</dt><dd>${o.material || "—"}</dd>
+        <dt>Peso estimado</dt><dd>${pesoFormatado}</dd>
         <dt>Estado</dt><dd>${o.estado || "—"}</dd>
         <dt>Função</dt><dd>${o.funcao || "—"}</dd>
         <dt>Descrição</dt><dd>${o.descricao || "—"}</dd>
@@ -362,6 +328,26 @@ async function abrirModalObjeto(id) {
 }
 document.getElementById("modal-fechar").addEventListener("click", () => {
   document.getElementById("modal").hidden = true;
+});
+
+// ─── Viewer de foto original ─────────────────────────────────────────────────
+function abrirFotoOriginal(url, nome) {
+  document.getElementById("foto-viewer-img").src = url;
+  document.getElementById("foto-viewer-titulo").textContent = `Foto original · ${nome}`;
+  document.getElementById("foto-viewer").hidden = false;
+  document.getElementById("foto-viewer-overlay").hidden = false;
+}
+
+function fecharFotoOriginal() {
+  document.getElementById("foto-viewer").hidden = true;
+  document.getElementById("foto-viewer-overlay").hidden = true;
+  document.getElementById("foto-viewer-img").src = "";
+}
+
+document.getElementById("foto-viewer-fechar").addEventListener("click", fecharFotoOriginal);
+document.getElementById("foto-viewer-overlay").addEventListener("click", fecharFotoOriginal);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") fecharFotoOriginal();
 });
 
 // ─── Assistente (chat) ───────────────────────────────────────────────────────
@@ -406,9 +392,82 @@ function adicionarBalao(quem, texto, modelo, classeExtra = "") {
   div.scrollIntoView({ behavior: "smooth", block: "end" });
 }
 
+// ─── Zona de Perigo: Reset do banco ────────────────────────────────────────
+async function carregarEstatisticasReset() {
+  const div = document.getElementById("reset-stats");
+  if (!div) return;
+  try {
+    const s = await fetchJSON(`${API}/admin/estatisticas`);
+    div.innerHTML = `
+      📊 Estado atual:<br>
+      &nbsp;&nbsp;• ${s.objetos} objeto(s) no inventário<br>
+      &nbsp;&nbsp;• ${s.fotos_processadas} foto(s) processada(s)<br>
+      &nbsp;&nbsp;• ${s.localizacoes} localização(ões)<br>
+      &nbsp;&nbsp;• ${s.categorias} categorias (serão preservadas)
+    `;
+  } catch (e) {
+    div.textContent = "Não foi possível carregar estatísticas.";
+  }
+}
+
+document.getElementById("btn-resetar-banco")?.addEventListener("click", async () => {
+  const confirma1 = confirm(
+    "⚠️ ATENÇÃO!\n\n" +
+    "Isso vai APAGAR PERMANENTEMENTE:\n" +
+    "• Todos os objetos do inventário\n" +
+    "• Todas as fotos e recortes\n" +
+    "• Todas as localizações\n\n" +
+    "Esta ação NÃO PODE ser desfeita.\n\n" +
+    "Deseja continuar?"
+  );
+  if (!confirma1) return;
+  
+  const palavra = prompt(
+    "Digite ZERAR (em maiúsculas) para confirmar a operação:"
+  );
+  if (palavra !== "ZERAR") {
+    alert("Operação cancelada — palavra de confirmação incorreta.");
+    return;
+  }
+  
+  const btn = document.getElementById("btn-resetar-banco");
+  btn.disabled = true;
+  btn.textContent = "🔄 Zerando banco…";
+  
+  try {
+    const res = await fetchJSON(`${API}/admin/resetar-banco`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmacao: "ZERAR" }),
+    });
+    
+    alert(
+      `✅ Banco zerado com sucesso!\n\n` +
+      `Removido:\n` +
+      `• ${res.removido.fotos_originais} fotos originais\n` +
+      `• ${res.removido.recortes} recortes\n` +
+      `• ${res.removido.icones} ícones\n\n` +
+      `A página vai recarregar agora.`
+    );
+    
+    // Recarrega tudo
+    location.reload();
+  } catch (err) {
+    alert("Erro ao zerar banco: " + err.message);
+    btn.disabled = false;
+    btn.textContent = "🗑️ Zerar Banco de Dados";
+  }
+});
+
+// Recarregar estatísticas ao clicar na aba Localizações
+document.querySelector('[data-aba="localizacoes"]')?.addEventListener("click", () => {
+  carregarEstatisticasReset();
+});
+
 // ─── Boot ────────────────────────────────────────────────────────────────────
 (async function init() {
   await carregarModo();
   await carregarLocalizacoes(true);
   await carregarInventario();
+  carregarEstatisticasReset();
 })();

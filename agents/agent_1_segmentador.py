@@ -38,8 +38,10 @@ from pathlib import Path
 from PIL import Image, ImageOps
 from core.config import RECORTES_DIR
 from core.visao_global import analisar_foto_completa, _CACHE_ANALISE
+from core.analise_cena import analisar_cena
 from core.segmentacao_cv import detectar_objetos, gerar_icone_anotado
 from core.gazetteer import GazetteerMatcher
+from core.crop_refinador import refinar_crop
 
 _log = logging.getLogger("casaiq.agent_1")
 
@@ -138,8 +140,20 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     _log.info("segmentando_v4_skill_first",
               extra={"caminho_foto": caminho_foto, "foto_id": foto_id})
 
-    # ─── 1. SKILL: análise rica completa ───
-    analise = analisar_foto_completa(caminho_foto)
+    # ─── 0. PRÉ-ANÁLISE DE CENA: tomografia leve, sem IA (~0.2-0.7s) ───
+    # Estima nº de objetos, complexidade e cortes de borda a partir de seções
+    # ortogonais da variância local. Vira pista não-vinculante para o prompt.
+    cena = analisar_cena(caminho_foto)
+    _log.info("pre_analise_cena", extra={
+        "n_obj_estimado": cena.n_objetos_estimado,
+        "complexidade": cena.complexidade,
+        "bordas": cena.bordas_ativas,
+        "tempo_s": cena.tempo_s,
+        "foto_id": foto_id,
+    })
+
+    # ─── 1. SKILL: análise rica completa (com pista da cena) ───
+    analise = analisar_foto_completa(caminho_foto, hint_cena=cena.resumo_prompt())
     _CACHE_ANALISE[caminho_foto] = analise  # garante cache para o pipeline reusar
 
     objetos_skill = analise.get("objetos", [])
@@ -204,40 +218,55 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
                 "centroide": centroide,
             })
 
+        obj_com_bbox = {**obj, "bbox_normalizada": bbox_norm} if bbox_norm else obj
+
+        # ── Crop refinado (2 estágios + gatilho 3º) ──────────────────────────
+        fonte_crop = "spotlight_fallback"
         try:
-            gerar_icone_anotado(
+            _, fonte_crop = refinar_crop(
                 caminho_foto=caminho_foto,
+                obj=obj_com_bbox,
                 saida=icone_path,
-                bbox_norm=bbox_norm,
                 numero=numero,
-                total=total_objetos,
+                total_objetos=total_objetos,
                 nome=nome,
             )
-            fonte_bbox = "icone_anotado" if bbox_norm else "icone_sem_bbox"
-            _log.info("icone_anotado_gerado", extra={
-                "nome": nome,
-                "numero": numero,
-                "total": total_objetos,
-                "tem_bbox": bbox_norm is not None,
+            _log.info("crop_refinado_gerado", extra={
+                "nome": nome, "numero": numero, "fonte": fonte_crop,
                 "foto_id": foto_id,
             })
         except Exception as e:
-            _log.warning("erro_icone_anotado", extra={
+            # Fallback seguro: spotlight na foto inteira
+            _log.warning("crop_refinador_falhou_fallback_spotlight", extra={
                 "nome": nome, "erro": str(e), "foto_id": foto_id,
             })
-            continue
+            try:
+                gerar_icone_anotado(
+                    caminho_foto=caminho_foto,
+                    saida=icone_path,
+                    bbox_norm=bbox_norm,
+                    numero=numero,
+                    total=total_objetos,
+                    nome=nome,
+                )
+            except Exception as e2:
+                _log.warning("fallback_spotlight_falhou", extra={
+                    "nome": nome, "erro": str(e2), "foto_id": foto_id,
+                })
+                continue
 
         resultado.append({
             "nome": nome,
             "recorte_path": icone_path,
-            "_fonte_bbox": fonte_bbox,
+            "_fonte_bbox": fonte_crop,
         })
 
-    _log.info("segmentacao_v6_concluida", extra={
+    _log.info("segmentacao_v7_concluida", extra={
         "objetos_finais": len(resultado),
         "nomes": [r["nome"] for r in resultado],
-        "com_bbox": sum(1 for r in resultado if r["_fonte_bbox"] == "icone_anotado"),
-        "sem_bbox": sum(1 for r in resultado if r["_fonte_bbox"] == "icone_sem_bbox"),
+        "S2_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S2_bbox"),
+        "S3_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S3_bbox"),
+        "fallback": sum(1 for r in resultado if "fallback" in r["_fonte_bbox"]),
         "foto_id": foto_id,
     })
     return resultado

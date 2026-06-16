@@ -10,13 +10,15 @@ from pathlib import Path
 from core.database import init_db
 from core.logging_config import setup_logging
 from core.roteador import descricao_modo
-from api.routes.localizacoes import router as r_loc
-from api.routes.fotos        import router as r_fotos
-from api.routes.videos       import router as r_videos
-from api.routes.objetos      import router as r_obj
-from api.routes.chat         import router as r_chat
-from api.routes.estatisticas import router as r_stats
-from api.routes.modelos      import router as r_modelos
+from api.routes.localizacoes    import router as r_loc
+from api.routes.fotos           import router as r_fotos
+from api.routes.videos          import router as r_videos
+from api.routes.objetos         import router as r_obj
+from api.routes.chat            import router as r_chat
+from api.routes.estatisticas    import router as r_stats
+from api.routes.modelos         import router as r_modelos
+from api.routes.observabilidade import router as r_observabilidade
+from api.routes.admin           import router as r_admin
 
 
 _log = logging.getLogger("casaiq.app")
@@ -65,13 +67,15 @@ def favicon():
     return Response(status_code=204)
 
 # Routers /api — ANTES do StaticFiles
-app.include_router(r_loc,     prefix="/api")
-app.include_router(r_fotos,   prefix="/api")
-app.include_router(r_videos,  prefix="/api")
-app.include_router(r_obj,     prefix="/api")
-app.include_router(r_chat,    prefix="/api")
-app.include_router(r_stats,   prefix="/api")
-app.include_router(r_modelos, prefix="/api")
+app.include_router(r_loc,              prefix="/api")
+app.include_router(r_fotos,            prefix="/api")
+app.include_router(r_videos,           prefix="/api")
+app.include_router(r_obj,              prefix="/api")
+app.include_router(r_chat,             prefix="/api")
+app.include_router(r_stats,            prefix="/api")
+app.include_router(r_modelos,          prefix="/api")
+app.include_router(r_observabilidade,  prefix="/api")
+app.include_router(r_admin,            prefix="/api")
 
 BASE_DIR = Path(__file__).parent.parent
 # Servir imagens de storage (recortes, ícones)

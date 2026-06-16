@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR             = Path(__file__).parent.parent.resolve()
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env", override=True)
 
 STORAGE_DIR          = BASE_DIR / "storage"
 FOTOS_ORIGINAIS_DIR  = STORAGE_DIR / "fotos_originais"
@@ -42,3 +42,10 @@ API_PORT             = int(os.getenv("CASAIQ_PORT", "8000"))
 # Vídeo — extração de keyframes
 CASAIQ_VIDEO_FPS         = float(os.getenv("CASAIQ_VIDEO_FPS", "0.5"))
 CASAIQ_VIDEO_MAX_FRAMES  = int(os.getenv("CASAIQ_VIDEO_MAX_FRAMES", "10"))
+
+# Gazetteer DINOv2
+_GAZ_BASE            = BASE_DIR / "data" / "gazetteer"
+GAZETTEER_ENABLED    = os.getenv("CASAIQ_GAZETTEER", "true").lower() == "true"
+GAZETTEER_EMB_PATH   = os.getenv("CASAIQ_GAZETTEER_EMB",   str(BASE_DIR / "embeddings.npy"))
+GAZETTEER_FAISS_PATH = os.getenv("CASAIQ_GAZETTEER_FAISS", str(_GAZ_BASE / "gazetteer.faiss"))
+GAZETTEER_MAP_PATH   = os.getenv("CASAIQ_GAZETTEER_MAP",   str(_GAZ_BASE / "index_mapping.jsonl"))

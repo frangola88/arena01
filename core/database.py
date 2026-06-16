@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS objetos (
     confianca             REAL DEFAULT 1.0,
     modelo_visao          TEXT DEFAULT '',
     revisado_pelo_usuario INTEGER DEFAULT 0,
+    cores_json            TEXT DEFAULT '[]',
     criado_em             DATETIME DEFAULT CURRENT_TIMESTAMP,
     atualizado_em         DATETIME DEFAULT CURRENT_TIMESTAMP
 );

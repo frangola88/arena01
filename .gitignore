@@ -34,3 +34,18 @@ env/
 
 # Knowledge graph (regenerável via /graphify update)
 graphify-out/
+
+# Modelos e dados grandes (regeneráveis, não versionar)
+*.pt
+*.npy
+embeddings_index.jsonl
+data/
+poc_dinov2/output/
+poc_dinov2/canonical/
+pipeline/stage1_consolidate/*.parquet
+pipeline/stage1_consolidate/dedupe_report.txt
+pipeline/stage2_imgs/*.log
+pipeline/stage2_imgs/img_index.jsonl
+pipeline/stage5_encode/*.npy
+pipeline/stage5_encode/*.jsonl
+pipeline/stage5_encode/*.log

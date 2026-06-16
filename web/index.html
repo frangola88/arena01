@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CasaIQ</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <header>
@@ -87,8 +87,30 @@
         <button type="submit">Adicionar</button>
       </form>
       <ul id="lista-localizacoes"></ul>
+
+      <!-- ─── Zona de Perigo: Reset completo do banco ─── -->
+      <section class="zona-perigo">
+        <h3>⚠️ Zona de Perigo</h3>
+        <p class="zona-perigo-aviso">
+          Apaga <strong>todos os objetos, fotos, recortes e ícones</strong>.
+          Mantém apenas as categorias-base do sistema. Útil para começar do zero
+          após testes ou problemas de detecção.
+        </p>
+        <div id="reset-stats" class="reset-stats">Carregando estatísticas…</div>
+        <button type="button" id="btn-resetar-banco" class="btn-perigo">
+          🗑️ Zerar Banco de Dados
+        </button>
+      </section>
     </section>
   </main>
+
+  <!-- Viewer de foto original (abre com clique direito no card) -->
+  <div id="foto-viewer-overlay" class="foto-viewer-overlay" hidden></div>
+  <div id="foto-viewer" class="foto-viewer" hidden>
+    <button id="foto-viewer-fechar" class="foto-viewer-fechar">&times;</button>
+    <div id="foto-viewer-titulo" class="foto-viewer-titulo"></div>
+    <img id="foto-viewer-img" class="foto-viewer-img" alt="Foto original" />
+  </div>
 
   <!-- Modal de detalhes/edição -->
   <div id="modal" class="modal-bg" hidden>
@@ -102,6 +124,7 @@
     <span id="badge-modo">Modo: carregando…</span>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="progress.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

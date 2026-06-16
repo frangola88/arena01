@@ -44,28 +44,22 @@ def mock_ollama_falha(mocker):
                         side_effect=RuntimeError("ollama down"))
 
 
-def _build_claude_response(texto: str, mocker):
-    msg = mocker.MagicMock()
-    msg.content = [mocker.MagicMock(text=texto)]
-    return msg
-
-
 @pytest.fixture
 def mock_claude_ok(mocker):
-    """anthropic.Anthropic() retorna client cuja .messages.create devolve resposta válida."""
-    client = mocker.MagicMock()
-    client.messages.create.return_value = _build_claude_response("resposta claude", mocker)
-    mocker.patch("anthropic.Anthropic", return_value=client)
-    return client
+    """httpx.post retorna resposta Claude API válida (200 + content[0].text)."""
+    resp = mocker.MagicMock()
+    resp.status_code = 200
+    resp.json.return_value = {"content": [{"text": "resposta claude"}]}
+    return mocker.patch("httpx.post", return_value=resp)
 
 
 @pytest.fixture
 def mock_claude_falha(mocker):
-    """anthropic.Anthropic() instancia, mas .messages.create levanta."""
-    client = mocker.MagicMock()
-    client.messages.create.side_effect = RuntimeError("claude api down")
-    mocker.patch("anthropic.Anthropic", return_value=client)
-    return client
+    """httpx.post retorna status 500, fazendo _claude_* levantar RuntimeError."""
+    resp = mocker.MagicMock()
+    resp.status_code = 500
+    resp.text = "internal server error"
+    return mocker.patch("httpx.post", return_value=resp)
 
 
 @pytest.fixture
@@ -88,7 +82,7 @@ def test_visao_inteligente_sem_confianca_vai_para_ollama(
     assert resp == "resposta ollama"
     assert modelo == "ollama"
     mock_ollama_ok.assert_called_once()
-    mock_claude_ok.messages.create.assert_not_called()
+    mock_claude_ok.assert_not_called()
 
 
 def test_visao_modo_claude_chama_anthropic_direto(
@@ -98,7 +92,7 @@ def test_visao_modo_claude_chama_anthropic_direto(
     resp, modelo = chamar_visao("descreva", imagem_fake)
     assert resp == "resposta claude"
     assert modelo == "claude_api"
-    mock_claude_ok.messages.create.assert_called_once()
+    mock_claude_ok.assert_called_once()
     mock_ollama_ok.assert_not_called()
 
 
@@ -129,7 +123,7 @@ def test_visao_offline_nao_faz_fallback_para_claude(
     set_modo("offline")
     with pytest.raises(RuntimeError, match="Visão indisponível"):
         chamar_visao("descreva", imagem_fake)
-    mock_claude_ok.messages.create.assert_not_called()
+    mock_claude_ok.assert_not_called()
 
 
 def test_visao_sem_api_e_ollama_falho_levanta(
@@ -149,7 +143,7 @@ def test_visao_confianca_baixa_pede_segunda_opiniao_claude(
     set_modo("inteligente")
     _, modelo = chamar_visao("descreva", imagem_fake, confianca_anterior=0.3)
     assert modelo == "claude_api"
-    mock_claude_ok.messages.create.assert_called_once()
+    mock_claude_ok.assert_called_once()
     mock_ollama_ok.assert_not_called()
 
 
@@ -163,7 +157,7 @@ def test_texto_classificacao_sempre_local(
     set_modo("inteligente")
     _, modelo = chamar_texto("classifique X", tarefa=TarefaTexto.CLASSIFICACAO)
     assert modelo == "ollama"
-    mock_claude_ok.messages.create.assert_not_called()
+    mock_claude_ok.assert_not_called()
 
 
 def test_texto_text_to_sql_em_inteligente_vai_para_claude(
@@ -183,7 +177,7 @@ def test_texto_local_primeiro_nao_chama_claude_proativamente(
     set_modo("local_primeiro")
     _, modelo = chamar_texto("converta", tarefa=TarefaTexto.TEXT_TO_SQL)
     assert modelo == "ollama"
-    mock_claude_ok.messages.create.assert_not_called()
+    mock_claude_ok.assert_not_called()
 
 
 def test_texto_local_primeiro_ollama_falha_fallback_claude(
@@ -200,17 +194,17 @@ def test_texto_offline_ollama_falha_levanta(
     set_modo("offline")
     with pytest.raises(RuntimeError, match="Texto indisponível"):
         chamar_texto("oi", tarefa=TarefaTexto.RESPOSTA_CHAT)
-    mock_claude_ok.messages.create.assert_not_called()
+    mock_claude_ok.assert_not_called()
 
 
 def test_texto_passa_max_tokens_para_anthropic(
     set_modo, com_api, mock_ollama_ok, mock_claude_ok
 ):
-    """max_tokens deve ser repassado para anthropic.messages.create."""
+    """max_tokens deve ser repassado no corpo da requisição httpx."""
     set_modo("claude")
     chamar_texto("oi", tarefa=TarefaTexto.RESPOSTA_CHAT, max_tokens=2048)
-    kwargs = mock_claude_ok.messages.create.call_args.kwargs
-    assert kwargs["max_tokens"] == 2048
+    body = mock_claude_ok.call_args.kwargs["json"]
+    assert body["max_tokens"] == 2048
 
 
 # ---------------------------------------------------------------------------
