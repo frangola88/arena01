@@ -6,15 +6,27 @@ Reconstrói uma superfície clássica de "object-ness" a partir de seções
 horizontais e verticais da variância local, no espírito da batimetria de
 seções transversais em hidrologia / da transformada de Radon em tomografia.
 
-Pipeline (zero ML, zero $$, ~0.2-0.4s CPU em 4000×3000):
-    1. variância local em blocos de 16px        → mapa de "agitação"
-    2. pré-suavização gaussiana (σ=4)           → atenua ruído
+Pipeline (zero ML, zero $$, ~0.1-0.4s CPU em 4000×3000):
+    1. coerência de gradiente em blocos de 16px → mapa de "object-ness"
+       (energia × anisotropia do structure tensor: distingue borda de
+        objeto — gradiente coerente/linear — de textura de fundo —
+        gradiente isotrópico; ver _coerencia_local)
+    2. pré-suavização gaussiana (σ=1)           → atenua só o granulado fino
     3. amostra 48 seções H + 48 V (passo 4)     → ~2.6k pontos esparsos
     4. griddata cubic                           → reconstrói superfície
     5. pós-suavização gaussiana (σ=4)           → tira oscilações do cubic
     6. filtro sigmoid (k=12, μ=0.45)            → exacerba contraste fundo/objeto
     7. limiar por percentil + morfologia        → obj_mask / bg_mask
     8. componentes conectados                   → n_objetos_estimado + picos
+
+Histórico: a versão original usava VARIÂNCIA local (+σ=4). Em cenas com muitos
+objetos finos próximos (ex.: ferramentas alinhadas), a variância exigia σ alto
+pra suprimir textura de madeira/tecido, e esse σ alto fundia objetos vizinhos —
+subcontava (8/7 onde a verdade era 14). A coerência de gradiente separa textura
+de borda real sem precisar do σ pesado, recuperando a contagem (~10-13 vs 14)
+sem explodir em ruído. Validado em data/fotos_mestras/ (ver poc_dinov2/
+demo_analise_cena_coerencia.py). _variancia_local fica disponível por
+compatibilidade/testes.
 
 Produtos consumíveis pelos passos seguintes:
     - n_objetos_estimado  : prior para o prompt do Claude ("espere ~N objetos")
@@ -44,16 +56,19 @@ _log = logging.getLogger("casaiq.analise_cena")
 
 # ─── parâmetros (defaults validados na POC) ──────────────────────────────────────
 
-BLOCK_SZ   = 16        # px por bloco da variância local
+BLOCK_SZ   = 16        # px por bloco do sinal de object-ness
 N_SECOES   = 48        # seções horizontais
 M_SECOES   = 48        # seções verticais
 PASSO_SAMP = 4         # subamostragem dentro de cada seção
-SIGMA_SUAV = 4.0       # pré-suavização da variância (blocos)
+SIGMA_SUAV = 1.0       # pré-suavização do sinal de coerência (blocos) —
+                       # baixo de propósito: a coerência já suprime textura,
+                       # não precisa do σ alto que a variância exigia (e que
+                       # fundia objetos próximos)
 SIGMA_SUP  = 4.0       # pós-suavização da superfície reconstruída
 SIGMOID_K  = 12.0      # inclinação do filtro sigmoid
 SIGMOID_MU = 0.45      # ponto de inflexão do sigmoid
 TH_BG_PCT  = 25        # percentil abaixo → fundo
-TH_OBJ_PCT = 65        # percentil acima → objeto candidato
+TH_OBJ_PCT = 70        # percentil acima → objeto candidato
 AREA_MIN   = 4         # área mínima de blob (blocos) p/ contar como objeto
 LIM_SIMPLES = 5        # ≤ → "simples"
 LIM_MEDIA   = 12       # ≤ → "media"; acima → "densa"
@@ -85,10 +100,45 @@ class AnaliseCena:
 # ─── núcleo numérico ─────────────────────────────────────────────────────────────
 
 def _variancia_local(img_gray: np.ndarray, block_sz: int) -> np.ndarray:
+    """Sinal legado (variância por bloco). Mantido por compatibilidade e
+    testes; o pipeline de produção usa _coerencia_local."""
     H, W = img_gray.shape
     Hb, Wb = H // block_sz, W // block_sz
     bl = img_gray[:Hb * block_sz, :Wb * block_sz].reshape(Hb, block_sz, Wb, block_sz)
     return bl.var(axis=(1, 3)).astype(np.float32)
+
+
+def _coerencia_local(img_gray: np.ndarray, block_sz: int) -> np.ndarray:
+    """Sinal de object-ness por coerência de gradiente (structure tensor).
+
+    Para cada bloco de block_sz px calcula o tensor de estrutura 2×2 a partir
+    dos gradientes Sobel (médias de Ix², Iy², IxIy no bloco), seus autovalores
+    λ1≥λ2, e devolve  energia × anisotropia = (λ1+λ2) · (λ1−λ2)/(λ1+λ2).
+
+    - energia (λ1+λ2): quanta variação de borda há no bloco.
+    - anisotropia (λ1−λ2)/(λ1+λ2) ∈ [0,1]: 0 = gradiente isotrópico (textura,
+      ruído) → suprimido; ~1 = gradiente coerente/linear (borda real) → realçado.
+
+    É isso que separa borda de ferramenta de grão de madeira/trama de tecido
+    sem precisar do blur pesado que a variância exigia.
+    """
+    from scipy.ndimage import sobel
+    Ix = sobel(img_gray.astype(np.float32), axis=1)
+    Iy = sobel(img_gray.astype(np.float32), axis=0)
+    H, W = img_gray.shape
+    Hb, Wb = H // block_sz, W // block_sz
+
+    def _block_mean(a: np.ndarray) -> np.ndarray:
+        a = a[:Hb * block_sz, :Wb * block_sz].reshape(Hb, block_sz, Wb, block_sz)
+        return a.mean(axis=(1, 3))
+
+    Jxx, Jyy, Jxy = _block_mean(Ix * Ix), _block_mean(Iy * Iy), _block_mean(Ix * Iy)
+    trace = Jxx + Jyy
+    disc = np.sqrt(np.clip((trace / 2) ** 2 - (Jxx * Jyy - Jxy ** 2), 0, None))
+    lam1, lam2 = trace / 2 + disc, trace / 2 - disc
+    energia = lam1 + lam2
+    anisotropia = (lam1 - lam2) / (lam1 + lam2 + 1e-8)
+    return (energia * anisotropia).astype(np.float32)
 
 
 def _normalizar(arr: np.ndarray) -> np.ndarray:
@@ -196,8 +246,8 @@ def analisar_cena(fonte, *, aplicar_sigmoid: bool = True) -> AnaliseCena:
         img_gray = _carregar_cinza(fonte)
         H_orig, W_orig = img_gray.shape
 
-        var_map = _variancia_local(img_gray, BLOCK_SZ)
-        var_norm = _normalizar(gaussian_filter(var_map, sigma=SIGMA_SUAV))
+        sinal = _coerencia_local(img_gray, BLOCK_SZ)
+        var_norm = _normalizar(gaussian_filter(sinal, sigma=SIGMA_SUAV))
         Hb, Wb = var_norm.shape
 
         pts, vals = _amostrar_secoes(var_norm, N_SECOES, M_SECOES, PASSO_SAMP)
