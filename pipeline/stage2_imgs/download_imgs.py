@@ -111,11 +111,13 @@ class DomainScheduler:
             self.on_result(idx, url, status, path)
 
     def wait_drain(self):
-        # Sinaliza fim e espera todas as queues drenarem
+        # Sinaliza fim e espera todas as queues drenarem (sem timeout —
+        # domínios grandes podem levar horas; join com timeout curto
+        # desistia da espera e reportava "FIM" com download incompleto)
         for q in self.queues.values():
             q.put(None)
         for t in self.threads:
-            t.join(timeout=300)
+            t.join()
 
 def download_all(only_util: bool, sleep_per_req: float, max_items: int | None):
     IMG_DIR.mkdir(parents=True, exist_ok=True)
