@@ -26,7 +26,7 @@ OLLAMA_TIMEOUT_S     = int(os.getenv("OLLAMA_TIMEOUT_S", "120"))
 
 # Claude API (Anthropic) — opcional
 ANTHROPIC_API_KEY    = os.getenv("ANTHROPIC_API_KEY", "")
-ANTHROPIC_MODEL      = "claude-sonnet-4-20250514"
+ANTHROPIC_MODEL      = "claude-sonnet-4-6"
 
 # Modo de operação do roteador inteligente
 # Valores válidos: offline | local_primeiro | hibrido | claude | inteligente

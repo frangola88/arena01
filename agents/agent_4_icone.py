@@ -20,7 +20,7 @@ import logging
 from pathlib import Path
 from PIL import Image, ImageDraw
 from typing import Optional
-from core.config import ICONES_DIR, ANTHROPIC_API_KEY, LIMIAR_CONFIANCA
+from core.config import ICONES_DIR, ANTHROPIC_API_KEY, ANTHROPIC_MODEL, LIMIAR_CONFIANCA
 
 _log = logging.getLogger("casaiq.agent_4")
 
@@ -143,7 +143,7 @@ def _claude_desenha(nome: str, caminho_saida: str) -> bool:
         prompt = PROMPT_DESENHO.format(nome=nome, nome_curto=nome_curto)
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         resp = client.messages.create(
-            model="claude-sonnet-4-20250514", max_tokens=800,
+            model=ANTHROPIC_MODEL, max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         instrucoes = extrair_json(resp.content[0].text)
