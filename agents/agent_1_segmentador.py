@@ -39,6 +39,7 @@ from PIL import Image, ImageOps
 from core.config import RECORTES_DIR
 from core.visao_global import analisar_foto_completa, _CACHE_ANALISE
 from core.analise_cena import analisar_cena
+from core.verificacoes_cruzadas import verificar_cena, score_qualidade
 from core.segmentacao_cv import detectar_objetos, gerar_icone_anotado
 from core.gazetteer import GazetteerMatcher
 from core.crop_refinador import refinar_crop
@@ -196,6 +197,19 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     objetos_aceitaveis = [o for o in objetos_skill if _nome_eh_aceitavel(o.get("nome", ""))]
     total_objetos = len(objetos_aceitaveis)
 
+    # ─── Verificações cruzadas: clássico (etapa 0) × Claude (etapa 1) ─────────
+    # analise_cena não usa IA, então divergências revelam onde o Claude
+    # provavelmente errou. Não bloqueia — loga (warning se divergir) e anota a
+    # suspeita por objeto no resultado. Primeiro passo do score_qualidade.
+    verif = verificar_cena(cena, objetos_aceitaveis)
+    _diverge = (verif["contagem"]["veredito"] not in ("ok", "sem_sinal")
+                or verif["n_suspeitos_bg"] > 0)
+    (_log.warning if _diverge else _log.info)("verificacao_cruzada", extra={
+        "ratio_contagem": verif["contagem"],
+        "centroide_em_bg": verif["centroide_em_bg"],
+        "foto_id": foto_id,
+    })
+
     for numero, obj in enumerate(objetos_aceitaveis, start=1):
         nome = obj["nome"]
         icone_path = str(RECORTES_DIR / f"foto_{foto_id}_obj_{numero:02d}.jpg")
@@ -255,10 +269,23 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
                 })
                 continue
 
+        # ── Score de qualidade: combina sinais clássicos + Claude + DINOv2 ───
+        # heatmap DINOv2 vem por side-channel do refinar_bbox (None se gaz off).
+        heatmap_dino = getattr(gaz, "ultimo_heatmap", None) if gaz is not None else None
+        sq = score_qualidade(obj_com_bbox, cena, heatmap=heatmap_dino)
+        if sq["flags"]:
+            _log.info("score_qualidade_flags", extra={
+                "nome": nome, "numero": numero, "score": sq["score"],
+                "flags": sq["flags"], "foto_id": foto_id,
+            })
+
         resultado.append({
             "nome": nome,
             "recorte_path": icone_path,
             "_fonte_bbox": fonte_crop,
+            "_suspeita_bg": "centroide_em_bg" in sq["flags"],
+            "_score_qualidade": sq["score"],
+            "_flags_qualidade": sq["flags"],
         })
 
     _log.info("segmentacao_v7_concluida", extra={
@@ -267,6 +294,11 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
         "S2_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S2_bbox"),
         "S3_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S3_bbox"),
         "fallback": sum(1 for r in resultado if "fallback" in r["_fonte_bbox"]),
+        "suspeitas_bg": sum(1 for r in resultado if r.get("_suspeita_bg")),
+        "score_baixo": sum(1 for r in resultado if r.get("_score_qualidade", 1.0) < 0.5),
+        "score_medio": round(
+            sum(r.get("_score_qualidade", 0.0) for r in resultado) / len(resultado), 3
+        ) if resultado else 0.0,
         "foto_id": foto_id,
     })
     return resultado

@@ -1,0 +1,71 @@
+[2026-06-23 11:36:05] ================ expand_gazetteer START (pid 15977) ================
+[2026-06-23 11:36:05] STATUS=aguardando_download
+[2026-06-23 11:52:10] download finalizado (processo ausente)
+[2026-06-23 11:52:10] ultima linha download:   warnings.warn(
+[2026-06-23 11:52:10] imgs no disco: 30282
+[2026-06-23 11:52:10] STATUS=backup
+[2026-06-23 11:52:10] backup: embeddings.npy
+[2026-06-23 11:52:10] backup: index_mapping.jsonl
+[2026-06-23 11:52:10] backup: gazetteer.faiss
+[2026-06-23 11:52:10] backup: text_index.json
+[2026-06-23 11:52:10] backup em /home/cuco/projetos/casaiq/data/gazetteer/_archive/pre_expand_20260623_1152
+[2026-06-23 11:52:10] STATUS=encode_all
+[encode_all] carregando facebook/dinov2-small...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 14109.45it/s]
+[encode_all] dim=384  batch=64
+[encode_all] retomando: 18311 já feitos
+[encode_all] total=30282  pendentes=11971
+  18503/30282  2172.9 img/s  ETA 0min  erros=0
+  19015/30282  683.0 img/s  ETA 0min  erros=0
+  19527/30282  412.1 img/s  ETA 0min  erros=0
+  20039/30282  299.6 img/s  ETA 1min  erros=0
+  20551/30282  237.6 img/s  ETA 1min  erros=0
+  21063/30282  198.3 img/s  ETA 1min  erros=0
+  21511/30282  174.0 img/s  ETA 1min  erros=0
+  22023/30282  153.6 img/s  ETA 1min  erros=0
+  22535/30282  137.9 img/s  ETA 1min  erros=0
+  23047/30282  125.5 img/s  ETA 1min  erros=0
+  23559/30282  115.2 img/s  ETA 1min  erros=0
+  24007/30282  107.7 img/s  ETA 1min  erros=0
+  24519/30282  101.0 img/s  ETA 1min  erros=0
+  25031/30282  94.6 img/s  ETA 1min  erros=0
+  25543/30282  89.5 img/s  ETA 1min  erros=0
+  26055/30282  85.1 img/s  ETA 1min  erros=0
+  26503/30282  81.7 img/s  ETA 1min  erros=0
+  27015/30282  78.4 img/s  ETA 1min  erros=0
+  27527/30282  75.5 img/s  ETA 1min  erros=0
+  28039/30282  73.0 img/s  ETA 1min  erros=0
+  28551/30282  70.7 img/s  ETA 0min  erros=0
+  29063/30282  68.5 img/s  ETA 0min  erros=0
+  29511/30282  66.9 img/s  ETA 0min  erros=0
+  30023/30282  65.1 img/s  ETA 0min  erros=0
+
+==================================================
+DONE  shape=(30282, 384)  erros=0  tempo=7.9min
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_new.npy
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_index_new.jsonl
+[2026-06-23 12:00:07] encode_all OK
+[2026-06-23 12:00:07] STATUS=merge_rebuild
+=== merge_and_rebuild ===
+[1] Carregando antigos...
+    (47336, 384)  map=47336
+[2] Carregando novos...
+    (30282, 384)  map=30282
+    dedup: 18311 já no gazetteer, 11971 novos de fato
+[3] Total: (59307, 384)
+[4] index_mapping...
+[5] Salvando embeddings...
+[6] Rebuild FAISS...
+    59307 vetores
+[7] Salvando index_mapping...
+[8] Rebuild text_index...
+    ok
+[9] Smoke test...
+    top3 dists: [1.0000002 0.9962398 0.9340058]
+
+DONE  total=59307  antigos=47336  novos=11971
+[2026-06-23 12:00:13] merge_and_rebuild OK
+[2026-06-23 12:00:13] STATUS=verificando
+[2026-06-23 12:00:14] STATUS=CONCLUIDO
+[2026-06-23 12:00:14] ================ expand_gazetteer DONE ================

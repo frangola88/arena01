@@ -1,0 +1,168 @@
+================================================================================
+RELATÓRIO DE VALIDAÇÃO DO PIPELINE — score_qualidade
+Data/Hora: 2026-06-23T12:33:40.636358
+================================================================================
+
+RESUMO GLOBAL
+  Fotos processadas: 31
+  Scores coletados: 20
+  Score médio: 0.772
+  Intervalo: [0.556, 0.833]
+  Desvio padrão: 0.060
+  P25: 0.775, P50: 0.791, P75: 0.804
+
+FLAGS ENCONTRADAS (frequência):
+  - baixa_forca_cena: 10
+  - bbox_cortando:right: 8
+
+DETALHES POR FOTO
+--------------------------------------------------------------------------------
+
+20260602_191715_158037.jpg
+  Objetos: 3
+  Score médio: 0.664 ± 0.077
+  Intervalo: [0.556, 0.729]
+
+  Objetos detalhados:
+    • alicate de bico curvo: score=0.708 flags=baixa_forca_cena
+    • alicate de corte: score=0.556 flags=baixa_forca_cena
+    • decapador de fios: score=0.729 flags=baixa_forca_cena
+
+20260604_102732_419067.jpg
+  Objetos: 2
+  Score médio: 0.792 ± 0.017
+  Intervalo: [0.775, 0.808]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.775 flags=baixa_forca_cena
+    • furadeira: score=0.808 flags=bbox_cortando:right
+
+20260604_104518_674560.jpg
+  Objetos: 2
+  Score médio: 0.797 ± 0.012
+  Intervalo: [0.785, 0.809]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.785 flags=baixa_forca_cena
+    • furadeira: score=0.809 flags=bbox_cortando:right
+
+20260604_105329_875657.jpg
+  Objetos: 2
+  Score médio: 0.797 ± 0.000
+  Intervalo: [0.797, 0.797]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.797
+    • furadeira: score=0.797 flags=bbox_cortando:right
+
+20260604_105849_182902.jpg
+  Objetos: 2
+  Score médio: 0.787 ± 0.010
+  Intervalo: [0.777, 0.797]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.777 flags=baixa_forca_cena
+    • furadeira: score=0.797 flags=bbox_cortando:right
+
+20260604_111508_443677.jpg
+  Objetos: 2
+  Score médio: 0.806 ± 0.026
+  Intervalo: [0.780, 0.833]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.780 flags=baixa_forca_cena
+    • furadeira: score=0.833 flags=bbox_cortando:right
+
+20260604_111840_805468.jpg
+  ERRO: Truncated File Read
+
+20260604_112309_078130.jpg
+  Objetos: 2
+  Score médio: 0.792 ± 0.018
+  Intervalo: [0.775, 0.810]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.775 flags=baixa_forca_cena
+    • furadeira: score=0.810 flags=bbox_cortando:right
+
+20260604_113044_544264.jpg
+  ERRO: Truncated File Read
+
+20260604_113211_256184.jpg
+  Objetos: 2
+  Score médio: 0.799 ± 0.014
+  Intervalo: [0.785, 0.813]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.785 flags=baixa_forca_cena
+    • furadeira elétrica: score=0.813 flags=bbox_cortando:right
+
+20260604_113939_507010.jpg
+  Objetos: 3
+  Score médio: 0.768 ± 0.047
+  Intervalo: [0.701, 0.802]
+
+  Objetos detalhados:
+    • chave de boca: score=0.701 flags=baixa_forca_cena
+    • alicate de bico: score=0.800
+    • furadeira: score=0.802 flags=bbox_cortando:right
+
+20260604_152245_629456.jpg
+  ERRO: Truncated File Read
+
+20260604_153849_533369.jpg
+  ERRO: Truncated File Read
+
+20260604_164127_180456.jpg
+  ERRO: Truncated File Read
+
+20260604_164443_592025.jpg
+  ERRO: Truncated File Read
+
+20260604_170155_637634.jpg
+  ERRO: Truncated File Read
+
+20260604_171106_345663.jpg
+  ERRO: Truncated File Read
+
+20260604_171505_577920.jpg
+  ERRO: Truncated File Read
+
+20260604_172909_712782.jpg
+  ERRO: Truncated File Read
+
+20260606_114648_402753.jpg
+  ERRO: Truncated File Read
+
+20260614_125059_529053.jpg
+  ERRO: Truncated File Read
+
+20260614_125228_859912.jpg
+  ERRO: Truncated File Read
+
+20260616_101924_814909.jpg
+  ERRO: Truncated File Read
+
+20260616_101959_747706.jpg
+  ERRO: Truncated File Read
+
+20260616_122130_460329.jpg
+  ERRO: Truncated File Read
+
+20260616_135309_594307.jpg
+  ERRO: Truncated File Read
+
+20260616_140234_922530.jpg
+  ERRO: Truncated File Read
+
+20260616_140254_613924.jpg
+  ERRO: Truncated File Read
+
+20260623_105754_948287.jpg
+  ERRO: Truncated File Read
+
+20260623_110010_457066.jpg
+  ERRO: Truncated File Read
+
+20260623_111414_313553.jpg
+  ERRO: Truncated File Read

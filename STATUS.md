@@ -2,7 +2,40 @@
 
 > Documento de progresso. Lê-se de cima pra baixo: o que é o projeto,
 > como está organizado, o que já foi feito, e o que ainda falta.
-> Última atualização: 2026-05-06 · 8 commits no `main` · 211 testes em ~1s.
+> Última atualização: 2026-06-23 · 314 testes em ~2,8s.
+
+---
+
+## 0. Atualizações recentes (2026-06)
+
+- **Pipeline de segmentação evoluiu para 5 etapas** (era 4): etapa 0 =
+  `core/analise_cena.py` — pré-análise clássica de cena por seções ortogonais
+  (tomografia leve, zero ML/API), com sinal de **coerência de gradiente**
+  (structure tensor). Produz `n_objetos_estimado`, `complexidade`, `bg_mask`,
+  `obj_mask`, `picos` e `bordas_ativas`. Integrada no `agent_1` como hint não
+  vinculante para o prompt do Claude.
+- **Gazetteer visual em 47.336 embeddings** DINOv2-small (FAISS FlatIP +
+  `index_mapping.jsonl` + `text_index.json`). Runtime usa esse trio; o antigo
+  `gazetteer.db` (sqlite-vec) foi arquivado por estar morto/dessincronizado.
+- **Refinamento de bbox em 3 sinais** (`core/gazetteer.py`): visual (DINOv2) ×
+  cor × centroide; crop final via matting `rembg u2net`.
+- **Score de qualidade por objeto** (`core/verificacoes_cruzadas.py`, NOVO):
+  verificações cruzadas clássico × Claude × DINOv2, todas sinais ortogonais.
+  `score_qualidade(obj, cena, heatmap)` combina: centroide em obj/bg, força de
+  cena no centroide, W(y) de borda (objeto cortado), confiança do Claude e
+  concordância `superficie_cena × heatmap_dinov2`. Anexado por objeto no
+  `agent_1` (`_score_qualidade`, `_flags_qualidade`); loga `score_medio` e
+  `score_baixo`. **Não bloqueia** — é diagnóstico para filtrar inventário sem
+  revisão manual. Pendente: ligar W(y) no gate do S3 e calibrar pesos.
+- **Config de modelo**: `ANTHROPIC_MODEL = claude-sonnet-4-6` (o ID anterior
+  dava 404 com a chave atual).
+- **328 testes** passando (`conda run -n casaiq python -m pytest -q`).
+
+> **Expansão do gazetteer DESBLOQUEADA (2026-06-23):** o HTTP 403 era do IP da
+> Oracle (datacenter EUA), não dos headers — do Fedora (IP residencial BR) os 2
+> CDNs (kennedy + superpro) servem 200. Download dos ~80k pendentes rodando no
+> Fedora (`pipeline/stage2_imgs/download_imgs.py` no env `ai-dl-rl`). Depois:
+> matting → DINOv2 encode → rebuild FAISS para expandir 47k → ~80k.
 
 ---
 

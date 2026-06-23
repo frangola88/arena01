@@ -1,0 +1,369 @@
+{
+  "timestamp": "2026-06-23T12:27:23.314082",
+  "n_fotos": 31,
+  "fotos": [
+    {
+      "arquivo": "20260602_191715_158037.jpg",
+      "n_objetos": 3,
+      "n_com_score": 3,
+      "objetos": [
+        {
+          "nome": "alicate de bico curvo",
+          "score": 0.708,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate de corte",
+          "score": 0.556,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "decapador de fios",
+          "score": 0.729,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.6643333333333333,
+      "score_min": 0.556,
+      "score_max": 0.729,
+      "score_std": 0.07708148646436153
+    },
+    {
+      "arquivo": "20260604_102732_419067.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.775,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.808,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.7915000000000001,
+      "score_min": 0.775,
+      "score_max": 0.808,
+      "score_std": 0.016500000000000015
+    },
+    {
+      "arquivo": "20260604_104518_674560.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.785,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.809,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.797,
+      "score_min": 0.785,
+      "score_max": 0.809,
+      "score_std": 0.01200000000000001
+    },
+    {
+      "arquivo": "20260604_105329_875657.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.797,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.797,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.797,
+      "score_min": 0.797,
+      "score_max": 0.797,
+      "score_std": 0.0
+    },
+    {
+      "arquivo": "20260604_105849_182902.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.777,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.797,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.787,
+      "score_min": 0.777,
+      "score_max": 0.797,
+      "score_std": 0.010000000000000009
+    },
+    {
+      "arquivo": "20260604_111508_443677.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.78,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.833,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.8065,
+      "score_min": 0.78,
+      "score_max": 0.833,
+      "score_std": 0.026499999999999968
+    },
+    {
+      "arquivo": "20260604_111840_805468.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_112309_078130.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.775,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.81,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.7925,
+      "score_min": 0.775,
+      "score_max": 0.81,
+      "score_std": 0.017500000000000016
+    },
+    {
+      "arquivo": "20260604_113044_544264.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_113211_256184.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.785,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira el\u00e9trica",
+          "score": 0.813,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.7989999999999999,
+      "score_min": 0.785,
+      "score_max": 0.813,
+      "score_std": 0.013999999999999957
+    },
+    {
+      "arquivo": "20260604_113939_507010.jpg",
+      "n_objetos": 3,
+      "n_com_score": 3,
+      "objetos": [
+        {
+          "nome": "chave de boca",
+          "score": 0.701,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate de bico",
+          "score": 0.8,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.802,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.7676666666666666,
+      "score_min": 0.701,
+      "score_max": 0.802,
+      "score_std": 0.04714752261666452
+    },
+    {
+      "arquivo": "20260604_152245_629456.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_153849_533369.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_164127_180456.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_164443_592025.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_170155_637634.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_171106_345663.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_171505_577920.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260604_172909_712782.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260606_114648_402753.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260614_125059_529053.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260614_125228_859912.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_101924_814909.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_101959_747706.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_122130_460329.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_135309_594307.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_140234_922530.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260616_140254_613924.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260623_105754_948287.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260623_110010_457066.jpg",
+      "erro": "Truncated File Read"
+    },
+    {
+      "arquivo": "20260623_111414_313553.jpg",
+      "erro": "Truncated File Read"
+    }
+  ],
+  "estatisticas_globais": {
+    "n_scores_coletados": 20,
+    "score_medio_global": 0.7718500000000001,
+    "score_min_global": 0.556,
+    "score_max_global": 0.833,
+    "score_std_global": 0.05964752719099092,
+    "percentil_25": 0.775,
+    "percentil_50": 0.791,
+    "percentil_75": 0.8035000000000001,
+    "flags_encontradas": [
+      [
+        "baixa_forca_cena",
+        10
+      ],
+      [
+        "bbox_cortando:right",
+        8
+      ]
+    ]
+  }
+}

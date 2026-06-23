@@ -1,0 +1,148 @@
+{
+  "timestamp": "2026-06-23T12:22:39.631319",
+  "n_fotos": 4,
+  "fotos": [
+    {
+      "arquivo": "20260602_191715_158037.jpg",
+      "n_objetos": 4,
+      "n_com_score": 4,
+      "objetos": [
+        {
+          "nome": "alicate de bico curvo",
+          "score": 0.697,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate de corte diagonal",
+          "score": 0.558,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate decapador de fios",
+          "score": 0.89,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate decapador de fios",
+          "score": 0.687,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.708,
+      "score_min": 0.558,
+      "score_max": 0.89,
+      "score_std": 0.11851793113280369
+    },
+    {
+      "arquivo": "20260604_102732_419067.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.787,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.825,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.806,
+      "score_min": 0.787,
+      "score_max": 0.825,
+      "score_std": 0.01899999999999996
+    },
+    {
+      "arquivo": "20260604_104518_674560.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.781,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.837,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.8089999999999999,
+      "score_min": 0.781,
+      "score_max": 0.837,
+      "score_std": 0.02799999999999997
+    },
+    {
+      "arquivo": "20260604_105329_875657.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.784,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.828,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.806,
+      "score_min": 0.784,
+      "score_max": 0.828,
+      "score_std": 0.021999999999999964
+    }
+  ],
+  "estatisticas_globais": {
+    "n_scores_coletados": 10,
+    "score_medio_global": 0.7674,
+    "score_min_global": 0.558,
+    "score_max_global": 0.89,
+    "score_std_global": 0.09109248048000448,
+    "percentil_25": 0.718,
+    "percentil_50": 0.7855000000000001,
+    "percentil_75": 0.8272499999999999,
+    "flags_encontradas": [
+      [
+        "baixa_forca_cena",
+        6
+      ],
+      [
+        "bbox_cortando:right",
+        3
+      ]
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-06-23T12:31:40.516107",
+  "n_fotos": 2,
+  "fotos": [
+    {
+      "arquivo": "20260602_191715_158037.jpg",
+      "n_objetos": 3,
+      "n_com_score": 3,
+      "objetos": [
+        {
+          "nome": "alicate de bico curvo",
+          "score": 0.708,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate de corte diagonal",
+          "score": 0.718,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "decapador de fios",
+          "score": 0.744,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.7233333333333333,
+      "score_min": 0.708,
+      "score_max": 0.744,
+      "score_std": 0.01517307556898807
+    },
+    {
+      "arquivo": "20260604_102732_419067.jpg",
+      "n_objetos": 2,
+      "n_com_score": 2,
+      "objetos": [
+        {
+          "nome": "alicate de bico",
+          "score": 0.787,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "furadeira",
+          "score": 0.831,
+          "flags": [
+            "bbox_cortando:right"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.8089999999999999,
+      "score_min": 0.787,
+      "score_max": 0.831,
+      "score_std": 0.021999999999999964
+    }
+  ],
+  "estatisticas_globais": {
+    "n_scores_coletados": 5,
+    "score_medio_global": 0.7575999999999999,
+    "score_min_global": 0.708,
+    "score_max_global": 0.831,
+    "score_std_global": 0.04574975409769981,
+    "percentil_25": 0.718,
+    "percentil_50": 0.744,
+    "percentil_75": 0.787,
+    "flags_encontradas": [
+      [
+        "baixa_forca_cena",
+        4
+      ],
+      [
+        "bbox_cortando:right",
+        1
+      ]
+    ]
+  }
+}

@@ -47,6 +47,19 @@ def main():
     idx_new = [json.loads(l) for l in open(IDX_NEW)]
     print(f"    {emb_new.shape}  map={len(idx_new)}", flush=True)
 
+    # Dedup: encode_all encoda TODAS as dataset_imgs, mas parte delas já pode
+    # estar no gazetteer (merges anteriores). Mantém só os shas novos para o
+    # merge ser idempotente (sem duplicar embeddings já presentes).
+    old_keys = {e["key"] for e in map_old}
+    keep = [i for i, e in enumerate(idx_new) if e["sha"] not in old_keys]
+    n_dup = len(idx_new) - len(keep)
+    emb_new = emb_new[keep]
+    idx_new = [idx_new[i] for i in keep]
+    print(f"    dedup: {n_dup} já no gazetteer, {len(idx_new)} novos de fato", flush=True)
+
+    if len(idx_new) == 0:
+        print("[3] Nada novo para adicionar — gazetteer já está atualizado.", flush=True)
+        return
     emb_all = np.concatenate([emb_old, emb_new], axis=0)
     print(f"[3] Total: {emb_all.shape}", flush=True)
 

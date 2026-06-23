@@ -194,10 +194,68 @@ def _gerar_crop_final(img_bgr: np.ndarray, bbox: dict,
 
 # ── API pública ───────────────────────────────────────────────────────────────
 
+def _bbox_tocando_bordas(bbox: dict, crop_shape: tuple, tolerancia: float = 0.05) -> list[str]:
+    """
+    Verifica se a bbox está tocando as bordas do crop (sinalizando possível corte).
+    Retorna lista de lados que estão muito próximos da borda: ['left', 'right', 'top', 'bottom']
+
+    bbox: coordenadas normalizadas [0, 1] dentro do crop
+    crop_shape: (altura, largura) do crop
+    tolerancia: quanto dos 0.0-1.0 contar como "tocando borda" (padrão: 5%)
+    """
+    cortados = []
+    if bbox.get("x1", 0.0) < tolerancia:
+        cortados.append("left")
+    if bbox.get("x2", 1.0) > (1.0 - tolerancia):
+        cortados.append("right")
+    if bbox.get("y1", 0.0) < tolerancia:
+        cortados.append("top")
+    if bbox.get("y2", 1.0) > (1.0 - tolerancia):
+        cortados.append("bottom")
+    return cortados
+
+
+def _expandir_bbox_por_corte(bbox: dict, W: int, H: int,
+                             lados_cortados: list[str], expansao: float = 0.15) -> dict:
+    """
+    Expande a bbox na(s) direção(ões) onde foram detectadas possíveis cortes.
+
+    Args:
+        bbox: bbox original em coords normalizadas
+        W, H: dimensões da imagem
+        lados_cortados: ['left', 'right', 'top', 'bottom']
+        expansao: quanto expandir como fração da dimensão (padrão: 15%)
+
+    Returns:
+        bbox expandida (clipeada para [0, 1])
+    """
+    bw = (bbox["x2"] - bbox["x1"]) * W
+    bh = (bbox["y2"] - bbox["y1"]) * H
+    exp_x = (bw * expansao) / W
+    exp_y = (bh * expansao) / H
+
+    novo_bbox = bbox.copy()
+    if "left" in lados_cortados:
+        novo_bbox["x1"] = max(0.0, novo_bbox["x1"] - exp_x)
+    if "right" in lados_cortados:
+        novo_bbox["x2"] = min(1.0, novo_bbox["x2"] + exp_x)
+    if "top" in lados_cortados:
+        novo_bbox["y1"] = max(0.0, novo_bbox["y1"] - exp_y)
+    if "bottom" in lados_cortados:
+        novo_bbox["y2"] = min(1.0, novo_bbox["y2"] + exp_y)
+
+    return novo_bbox
+
+
 def refinar_crop(caminho_foto: str, obj: dict, saida: str,
                  numero: int, total_objetos: int, nome: str) -> tuple[str, str]:
     """
-    Gera o crop refinado de um objeto em 2 estágios (+ gatilho opcional de 3º).
+    Gera o crop refinado de um objeto em 2 estágios (+ gatilhos opcionais).
+
+    Stages:
+    - Stage 2: crop generoso, Claude refina a bbox
+    - Stage 2.5: se bbox toca bordas (possível corte), expande e roda Claude novamente
+    - Stage 3: se qualidade='multiplos' ou conf < 0.70, roda com padding menor
 
     Args:
         caminho_foto  : foto original (EXIF corrigido internamente)
@@ -208,7 +266,7 @@ def refinar_crop(caminho_foto: str, obj: dict, saida: str,
         nome          : nome do objeto
 
     Returns:
-        (saida, tag) — tag: 'S2_bbox' | 'S3_bbox'
+        (saida, tag) — tag: 'S2_bbox' | 'S2.5_bbox_expandida' | 'S3_bbox'
     """
     img_bgr, _ = _carregar_imagem_orientada(caminho_foto)
     H, W = img_bgr.shape[:2]
@@ -231,11 +289,30 @@ def refinar_crop(caminho_foto: str, obj: dict, saida: str,
 
     bbox_final = bbox2
     tag = "S2_bbox"
-    precisa_s3 = (qual2 == "multiplos") or (conf2 < 0.70)
 
-    # ── Stage 3 (gatilho) ─────────────────────────────────────────────────────
-    if precisa_s3:
-        obj_s3 = {"bbox_normalizada": bbox2}
+    # ── Stage 2.5 (gatilho: bbox tocando bordas = possível corte) ──────────────
+    lados_cortados = _bbox_tocando_bordas(r2.get("bbox_normalizada", {}),
+                                          crop_rough.shape, tolerancia=0.05)
+    if lados_cortados:
+        bbox2_expandida = _expandir_bbox_por_corte(bbox2, W, H, lados_cortados, expansao=0.15)
+        obj_s25 = {"bbox_normalizada": bbox2_expandida}
+        crop_s25, origem_s25 = _crop_generoso(img_bgr, obj_s25, W, H, padding=0.12)
+        if crop_s25.size > 0:
+            r25 = _chamar_claude(crop_s25)
+            qual25 = r25.get("qualidade_crop", "erro")
+            conf25 = r25.get("confianca", 0.0)
+            bbox25 = _mapear_coords(r25, origem_s25, W, H)
+            bbox_final = bbox25
+            tag = "S2.5_bbox_expandida"
+            _log.info("crop_s2.5_expandida_por_corte", extra={
+                "nome": nome, "lados": lados_cortados,
+                "qual": qual25, "conf": f"{conf25:.2f}",
+            })
+
+    # ── Stage 3 (gatilho: qualidade ou confiança baixa) ──────────────────────
+    precisa_s3 = (qual2 == "multiplos") or (conf2 < 0.70)
+    if precisa_s3 and tag != "S2.5_bbox_expandida":  # não acumular estágios
+        obj_s3 = {"bbox_normalizada": bbox_final}
         crop_s3, origem_s3 = _crop_generoso(img_bgr, obj_s3, W, H, padding=0.08)
         if crop_s3.size > 0:
             r3 = _chamar_claude(crop_s3)

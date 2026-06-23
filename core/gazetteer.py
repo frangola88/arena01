@@ -388,6 +388,7 @@ class GazetteerMatcher:
              Claude indicou o objeto de fato estar).
         """
         from PIL import Image, ImageOps
+        self.ultimo_heatmap = None   # side-channel p/ verificacoes_cruzadas (concordância de mapas)
         try:
             img = Image.open(foto_path)
             img = ImageOps.exif_transpose(img).convert("RGB")
@@ -429,6 +430,11 @@ class GazetteerMatcher:
 
             if cores:
                 heatmap = heatmap * self._color_weight(img, cores, S)
+
+            # Guarda o heatmap normalizado (S,S) p/ a verificação cruzada de
+            # concordância com a superficie_cena clássica (etapa 0 × etapa 2).
+            _hm = np.asarray(heatmap, dtype=np.float32)
+            self.ultimo_heatmap = (_hm - _hm.min()) / (np.ptp(_hm) + 1e-8)
 
             # 5. Top-K% dentro da bbox do Claude
             pr0 = int(cy1 * S);  pr1 = min(S, int(cy2 * S) + 1)

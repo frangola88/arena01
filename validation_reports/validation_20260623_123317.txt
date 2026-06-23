@@ -1,0 +1,38 @@
+================================================================================
+RELATÓRIO DE VALIDAÇÃO DO PIPELINE — score_qualidade
+Data/Hora: 2026-06-23T12:33:17.654759
+================================================================================
+
+RESUMO GLOBAL
+  Fotos processadas: 2
+  Scores coletados: 5
+  Score médio: 0.758
+  Intervalo: [0.708, 0.831]
+  Desvio padrão: 0.046
+  P25: 0.718, P50: 0.744, P75: 0.787
+
+FLAGS ENCONTRADAS (frequência):
+  - baixa_forca_cena: 4
+  - bbox_cortando:right: 1
+
+DETALHES POR FOTO
+--------------------------------------------------------------------------------
+
+20260602_191715_158037.jpg
+  Objetos: 3
+  Score médio: 0.723 ± 0.015
+  Intervalo: [0.708, 0.744]
+
+  Objetos detalhados:
+    • alicate de bico curvo: score=0.708 flags=baixa_forca_cena
+    • alicate de corte diagonal: score=0.718 flags=baixa_forca_cena
+    • decapador de fios: score=0.744 flags=baixa_forca_cena
+
+20260604_102732_419067.jpg
+  Objetos: 2
+  Score médio: 0.809 ± 0.022
+  Intervalo: [0.787, 0.831]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.787 flags=baixa_forca_cena
+    • furadeira: score=0.831 flags=bbox_cortando:right

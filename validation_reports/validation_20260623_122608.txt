@@ -1,0 +1,57 @@
+================================================================================
+RELATÓRIO DE VALIDAÇÃO DO PIPELINE — score_qualidade
+Data/Hora: 2026-06-23T12:26:08.362046
+================================================================================
+
+RESUMO GLOBAL
+  Fotos processadas: 4
+  Scores coletados: 10
+  Score médio: 0.767
+  Intervalo: [0.558, 0.890]
+  Desvio padrão: 0.091
+  P25: 0.718, P50: 0.786, P75: 0.827
+
+FLAGS ENCONTRADAS (frequência):
+  - baixa_forca_cena: 6
+  - bbox_cortando:right: 3
+
+DETALHES POR FOTO
+--------------------------------------------------------------------------------
+
+20260602_191715_158037.jpg
+  Objetos: 4
+  Score médio: 0.708 ± 0.119
+  Intervalo: [0.558, 0.890]
+
+  Objetos detalhados:
+    • alicate de bico curvo: score=0.697 flags=baixa_forca_cena
+    • alicate de corte diagonal: score=0.558 flags=baixa_forca_cena
+    • alicate decapador de fios: score=0.890
+    • alicate decapador de fios: score=0.687 flags=baixa_forca_cena
+
+20260604_102732_419067.jpg
+  Objetos: 2
+  Score médio: 0.806 ± 0.019
+  Intervalo: [0.787, 0.825]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.787 flags=baixa_forca_cena
+    • furadeira: score=0.825 flags=bbox_cortando:right
+
+20260604_104518_674560.jpg
+  Objetos: 2
+  Score médio: 0.809 ± 0.028
+  Intervalo: [0.781, 0.837]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.781 flags=baixa_forca_cena
+    • furadeira: score=0.837 flags=bbox_cortando:right
+
+20260604_105329_875657.jpg
+  Objetos: 2
+  Score médio: 0.806 ± 0.022
+  Intervalo: [0.784, 0.828]
+
+  Objetos detalhados:
+    • alicate de bico: score=0.784 flags=baixa_forca_cena
+    • furadeira: score=0.828 flags=bbox_cortando:right
