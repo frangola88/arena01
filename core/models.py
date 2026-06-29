@@ -26,6 +26,7 @@ class Objeto:
     confianca: float               = 1.0
     modelo_visao: str              = ""   # 'ollama'|'claude_api'
     revisado_pelo_usuario: int     = 0
+    geometria_vetor: str           = ""   # GeoJSON do polígono vetorial (raster→vector)
     criado_em: Optional[datetime]  = None
     atualizado_em: Optional[datetime] = None
 

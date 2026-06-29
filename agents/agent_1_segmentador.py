@@ -43,6 +43,7 @@ from core.verificacoes_cruzadas import verificar_cena, score_qualidade, w_borda_
 from core.segmentacao_cv import detectar_objetos, gerar_icone_anotado
 from core.gazetteer import GazetteerMatcher
 from core.crop_refinador import refinar_crop
+from core.vetorizador_raster import vetorizar_superficie
 
 _log = logging.getLogger("casaiq.agent_1")
 
@@ -180,6 +181,22 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
         "tempo_s": cena.tempo_s,
         "foto_id": foto_id,
     })
+
+    # ─── 0b. VETORIZAÇÃO RASTER→VECTOR: aditiva, não bloqueia ───────────────
+    # Converte a superfície de object-ness em polígonos Shapely (isocontours).
+    # Resultado é apenas logado; não altera contrato de retorno nem bboxes.
+    try:
+        _vet = vetorizar_superficie(cena.superficie)
+        _log.info("vetorizacao_raster_resumo", extra={
+            "total_polys":  _vet["stats"]["total_polys"],
+            "total_area":   _vet["stats"]["total_area"],
+            "coverage_pct": _vet["stats"]["coverage_pct"],
+            "latency_ms":   _vet["performance"]["latency_ms"],
+            "geojson_len":  len(_vet["geojson"]),
+            "foto_id":      foto_id,
+        })
+    except Exception as _e:
+        _log.warning("vetorizacao_raster_falhou", extra={"erro": str(_e), "foto_id": foto_id})
 
     # ─── 1. SKILL: análise rica completa (com pista da cena) ───
     analise = analisar_foto_completa(caminho_foto, hint_cena=cena.resumo_prompt())

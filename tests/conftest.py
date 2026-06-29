@@ -85,3 +85,36 @@ def db_temp(tmp_path, monkeypatch) -> Path:
     yield db_path
 
     # SQLite WAL pode deixar arquivos auxiliares — tmp_path cuida da limpeza
+
+
+# ---------------------------------------------------------------------------
+# Fixtures para o vetorizador raster→vector
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def superficie_plana():
+    """Superfície uniforme abaixo do threshold (todos os valores = 0.1).
+
+    Representa uma cena sem objetos detectáveis; vetorizar_superficie deve
+    retornar lista vazia sem lançar exceção.
+    """
+    import numpy as np
+    return np.full((20, 20), 0.1, dtype=np.float32)
+
+
+@pytest.fixture
+def superficie_duas_ilhas():
+    """Superfície com duas regiões de alta intensidade separadas por fundo baixo.
+
+    Ilha 1: canto superior-esquerdo (linhas 1-5, colunas 1-5) — valor 0.9.
+    Ilha 2: canto inferior-direito (linhas 12-16, colunas 12-16) — valor 0.9.
+    Fundo: valor 0.1.
+
+    Permite testar que vetorizar_superficie devolve exatamente 2 polígonos,
+    cada um com centroide dentro da respectiva ilha.
+    """
+    import numpy as np
+    sup = np.full((20, 20), 0.1, dtype=np.float32)
+    sup[1:6, 1:6] = 0.9    # ilha 1
+    sup[12:17, 12:17] = 0.9  # ilha 2
+    return sup

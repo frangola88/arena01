@@ -49,3 +49,8 @@ GAZETTEER_ENABLED    = os.getenv("CASAIQ_GAZETTEER", "true").lower() == "true"
 GAZETTEER_EMB_PATH   = os.getenv("CASAIQ_GAZETTEER_EMB",   str(BASE_DIR / "embeddings.npy"))
 GAZETTEER_FAISS_PATH = os.getenv("CASAIQ_GAZETTEER_FAISS", str(_GAZ_BASE / "gazetteer.faiss"))
 GAZETTEER_MAP_PATH   = os.getenv("CASAIQ_GAZETTEER_MAP",   str(_GAZ_BASE / "index_mapping.jsonl"))
+
+# Vetorizador raster→vector (isocontours da superfície de object-ness)
+ISOCONTOUR_THRESHOLD = 0.5    # limiar da superfície para binarização (isocontour)
+MIN_AREA_PIXEL       = 20     # área mínima (em pixels de bloco) para aceitar polígono
+MIN_POLYGON_VERTICES = 3      # número mínimo de vértices para polígono válido
