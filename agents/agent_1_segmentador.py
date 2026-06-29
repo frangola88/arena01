@@ -39,7 +39,7 @@ from PIL import Image, ImageOps
 from core.config import RECORTES_DIR
 from core.visao_global import analisar_foto_completa, _CACHE_ANALISE
 from core.analise_cena import analisar_cena
-from core.verificacoes_cruzadas import verificar_cena, score_qualidade
+from core.verificacoes_cruzadas import verificar_cena, score_qualidade, w_borda_bbox, LIM_BORDA, FAIXA_BORDA
 from core.segmentacao_cv import detectar_objetos, gerar_icone_anotado
 from core.gazetteer import GazetteerMatcher
 from core.crop_refinador import refinar_crop
@@ -131,6 +131,34 @@ def _dimensoes_imagem(caminho: str) -> tuple[int, int]:
     return pil.size  # (w, h)
 
 
+def _gate_borda(
+    bbox_refinada: dict | None,
+    bbox_original: dict | None,
+    cena,
+    *,
+    foto_id=None,
+    nome=None,
+) -> dict | None:
+    """
+    Gate W(y): rejeita bbox refinada se o sinal de borda indicar objeto cortado.
+
+    Calcula w_borda_bbox(bbox_refinada, cena, faixa=FAIXA_BORDA, th=LIM_BORDA).
+    Se wb["max"] > LIM_BORDA (0.5), loga "objeto_cortado_rejeitando_bbox_refinada"
+    e retorna bbox_original (fallback para a bbox original do Claude).
+    Caso contrário retorna bbox_refinada (mantém refinamento DINOv2).
+
+    Comportamento-idêntico ao bloco inline que substituiu.
+    """
+    wb = w_borda_bbox(bbox_refinada, cena, faixa=FAIXA_BORDA, th=LIM_BORDA)
+    if wb and wb["max"] > LIM_BORDA:
+        _log.warning("objeto_cortado_rejeitando_bbox_refinada", extra={
+            "nome": nome, "w_max": round(wb["max"], 3),
+            "cortado_em": wb["cortado"], "foto_id": foto_id,
+        })
+        return bbox_original
+    return bbox_refinada
+
+
 def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     """
     Pipeline v4: skill manda em quantidade + nomes + bboxes.
@@ -218,6 +246,7 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
         # Refinamento DINOv2 com 3 sinais: visual + cor + centroide
         cores      = obj.get("cores_dominantes") or []
         centroide  = obj.get("centroide_normalizado") or None
+        bbox_antes = bbox_norm  # guarda original para fallback W(y)
         if gaz is not None and bbox_norm is not None:
             bbox_norm = gaz.refinar_bbox(
                 caminho_foto, bbox_norm,
@@ -231,6 +260,9 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
                 "n_cores":   len(cores),
                 "centroide": centroide,
             })
+
+            # Gate W(y): rejeita objetos cortados (object-ness alta fora da bbox)
+            bbox_norm = _gate_borda(bbox_norm, bbox_antes, cena, foto_id=foto_id, nome=nome)
 
         obj_com_bbox = {**obj, "bbox_normalizada": bbox_norm} if bbox_norm else obj
 

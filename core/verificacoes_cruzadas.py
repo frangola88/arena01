@@ -39,6 +39,9 @@ RATIO_FRAG = 2.0    # n_claude > 2.0·n_estimado → Claude fragmentando ou cena
 # Nível de object-ness (superficie normalizada [0,1], realçada por sigmoid) que,
 # logo fora da bbox, indica objeto transbordando → bbox apertada/objeto cortado.
 LIM_BORDA = 0.5
+# Faixa percentual (em coordenadas normalizadas) logo fora da bbox usada para
+# medir overflow de object-ness — quanto da borda externa é amostrada.
+FAIXA_BORDA = 0.04
 
 
 def ratio_contagem(n_claude: int, n_estimado: int) -> dict:
@@ -139,7 +142,7 @@ def forca_no_centroide(centroide: dict | None, cena: AnaliseCena) -> float:
     return float(np.clip(sup[by, bx], 0.0, 1.0))
 
 
-def w_borda_bbox(bbox: dict | None, cena: AnaliseCena, faixa: float = 0.04,
+def w_borda_bbox(bbox: dict | None, cena: AnaliseCena, faixa: float = FAIXA_BORDA,
                  th: float | None = None) -> dict:
     """Object-ness numa faixa logo FORA de cada borda da bbox.
 

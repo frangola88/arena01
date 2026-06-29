@@ -49,3 +49,6 @@ pipeline/stage2_imgs/img_index.jsonl
 pipeline/stage5_encode/*.npy
 pipeline/stage5_encode/*.jsonl
 pipeline/stage5_encode/*.log
+
+# Relatórios de execução do pipeline (artefatos)
+pipeline_reports/

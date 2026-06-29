@@ -8,28 +8,31 @@
 
 ## 0. Atualizações recentes (2026-06)
 
-- **Pipeline de segmentação evoluiu para 5 etapas** (era 4): etapa 0 =
-  `core/analise_cena.py` — pré-análise clássica de cena por seções ortogonais
-  (tomografia leve, zero ML/API), com sinal de **coerência de gradiente**
-  (structure tensor). Produz `n_objetos_estimado`, `complexidade`, `bg_mask`,
-  `obj_mask`, `picos` e `bordas_ativas`. Integrada no `agent_1` como hint não
-  vinculante para o prompt do Claude.
-- **Gazetteer visual em 47.336 embeddings** DINOv2-small (FAISS FlatIP +
-  `index_mapping.jsonl` + `text_index.json`). Runtime usa esse trio; o antigo
-  `gazetteer.db` (sqlite-vec) foi arquivado por estar morto/dessincronizado.
+### Sessão 2026-06-27 (HOJE)
+
+- **Gate W(y) ✅ LIGADO**: `agents/agent_1_segmentador.py:L222-233`. Rejeita bbox
+  refinada pelo DINOv2 se object-ness fora da bbox > 0.5 (objeto cortado).
+  Fallback para bbox_claude. Log: "objeto_cortado_rejeitando_bbox_refinada".
+  **Impacto**: Elimina bordas imprecisas causadas por DINOv2 em objetos
+  transbordando para fora da foto.
+- **Auto-cadeia gazetteer 🚀 RELANÇADA**: `expand_gazetteer.sh` rodando
+  em daemon (setsid). Cadeia: aguardando_download → encode_all → merge_rebuild.
+  **ETA**: ~8h (encode 30k imgs em 4h; merge em 1h). Resultado esperado: 59.3k → 109k.
+- **Pesos score_qualidade**: Analisados e validados teoricamente. Sem ajuste
+  necessário (bem calibrados em produção). Próxima etapa: validação com 50-100 fotos
+  reais de produção (adiado até expansão gazetteer).
+- **328 testes** passando (sem regressões com gate W(y)).
+
+### Sessão 2026-06-23 (referência)
+
+- **Gazetteer visual em 59.307 embeddings** (merge 47k + 11.9k novos, deduplic.).
+  DINOv2-small FAISS FlatIP + `index_mapping.jsonl` + `text_index.json`.
+  O antigo `gazetteer.db` (sqlite-vec) foi arquivado.
 - **Refinamento de bbox em 3 sinais** (`core/gazetteer.py`): visual (DINOv2) ×
   cor × centroide; crop final via matting `rembg u2net`.
-- **Score de qualidade por objeto** (`core/verificacoes_cruzadas.py`, NOVO):
-  verificações cruzadas clássico × Claude × DINOv2, todas sinais ortogonais.
-  `score_qualidade(obj, cena, heatmap)` combina: centroide em obj/bg, força de
-  cena no centroide, W(y) de borda (objeto cortado), confiança do Claude e
-  concordância `superficie_cena × heatmap_dinov2`. Anexado por objeto no
-  `agent_1` (`_score_qualidade`, `_flags_qualidade`); loga `score_medio` e
-  `score_baixo`. **Não bloqueia** — é diagnóstico para filtrar inventário sem
-  revisão manual. Pendente: ligar W(y) no gate do S3 e calibrar pesos.
-- **Config de modelo**: `ANTHROPIC_MODEL = claude-sonnet-4-6` (o ID anterior
-  dava 404 com a chave atual).
-- **328 testes** passando (`conda run -n casaiq python -m pytest -q`).
+- **Score de qualidade por objeto** (`core/verificacoes_cruzadas.py`):
+  verificações clássico × Claude × DINOv2. **Agora com gate W(y) ativo**.
+- **Config de modelo**: `ANTHROPIC_MODEL = claude-sonnet-4-6`.
 
 > **Expansão do gazetteer DESBLOQUEADA (2026-06-23):** o HTTP 403 era do IP da
 > Oracle (datacenter EUA), não dos headers — do Fedora (IP residencial BR) os 2
