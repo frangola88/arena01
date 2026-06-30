@@ -11,6 +11,8 @@ O que está coberto:
 - Categoria desconhecida → cat_id NULL (fallback gracioso)
 - Agente 4 recebe objeto_id real (cursor.lastrowid pós-INSERT)
 - Foto sem objetos detectados termina como 'concluido' com 0
+- Persistência geometria_vetor: objeto com geom → gravada no banco
+- Resiliência geometria_vetor: vetorização falha → geometria_vetor=""
 """
 from __future__ import annotations
 

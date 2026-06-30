@@ -169,14 +169,18 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
                     enriquecido.get("cores_dominantes", []),
                     ensure_ascii=False
                 )
+                # geometria_vetor: GeoJSON Feature do polígono casado ao objeto
+                # (vem do agent_1 via casar_poligono_a_bbox); "" se não casou.
+                geometria_vetor = obj.get("geometria_vetor", "")
                 cursor = conn.execute("""
                     INSERT INTO objetos (
                         nome, descricao, categoria_id, localizacao_id,
                         cor, tamanho, tamanho_estimado_cm, peso_estimado_g,
                         material, estado, funcao, palavras_chave,
                         foto_original_path, recorte_path, icone_path,
-                        icone_fonte, confianca, modelo_visao, cores_json
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        icone_fonte, confianca, modelo_visao, cores_json,
+                        geometria_vetor
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, (
                     enriquecido.get("nome", nome_sugerido),
                     enriquecido.get("descricao", ""),
@@ -194,6 +198,7 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
                     enriquecido.get("confianca", 0.0),
                     enriquecido.get("_modelo", ""),
                     cores_json,
+                    geometria_vetor,
                 ))
                 conn.commit()
                 objeto_id = cursor.lastrowid   # ID real — INSERT já feito

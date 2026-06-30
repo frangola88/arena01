@@ -54,3 +54,4 @@ GAZETTEER_MAP_PATH   = os.getenv("CASAIQ_GAZETTEER_MAP",   str(_GAZ_BASE / "inde
 ISOCONTOUR_THRESHOLD = 0.5    # limiar da superfície para binarização (isocontour)
 MIN_AREA_PIXEL       = 20     # área mínima (em pixels de bloco) para aceitar polígono
 MIN_POLYGON_VERTICES = 3      # número mínimo de vértices para polígono válido
+IOU_MATCH_MIN        = 0.1    # limiar mínimo de IoU para casar objeto↔polígono

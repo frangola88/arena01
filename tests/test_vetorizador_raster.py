@@ -2,7 +2,8 @@
 Testes de core/vetorizador_raster.py.
 
 Cobertura ≥ 80% do módulo. Cada caso tem asserções substantivas sobre
-geometria, contagem de polígonos, GeoJSON, performance e IoU.
+geometria (inclusive furos), contagem de polígonos, GeoJSON, performance,
+IoU e o helper casar_poligono_a_bbox.
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ import numpy as np
 import pytest
 from shapely.geometry import Polygon
 
-from core.vetorizador_raster import vetorizar_superficie
+from core.vetorizador_raster import vetorizar_superficie, casar_poligono_a_bbox
 from core.config import ISOCONTOUR_THRESHOLD, MIN_AREA_PIXEL, MIN_POLYGON_VERTICES
 
 
@@ -331,3 +332,139 @@ def test_retorno_tem_todas_as_chaves(superficie_plana):
     assert set(out.keys()) == {"geometries", "attributes", "geojson", "stats", "performance"}
     assert set(out["stats"].keys()) == {"total_polys", "total_area", "coverage_pct"}
     assert set(out["performance"].keys()) == {"latency_ms", "threshold_used"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B2 / B3 — Furos (holes): região em anel → polígono com interior, área líquida
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_anel_produz_poligono_com_furo(superficie_anel):
+    """Região em anel → exatamente 1 polígono com len(poly.interiors) >= 1."""
+    out = vetorizar_superficie(superficie_anel)
+    assert out["stats"]["total_polys"] >= 1, "Anel deve produzir ao menos 1 polígono"
+    poly = out["geometries"][0]
+    assert len(list(poly.interiors)) >= 1, (
+        "Polígono derivado de anel deve ter ao menos 1 interior (furo)"
+    )
+
+
+def test_anel_n_holes_atributo(superficie_anel):
+    """Atributo n_holes deve refletir len(poly.interiors)."""
+    out = vetorizar_superficie(superficie_anel)
+    assert out["stats"]["total_polys"] >= 1
+    poly = out["geometries"][0]
+    attr = out["attributes"][0]
+    assert attr["n_holes"] == len(list(poly.interiors)), (
+        f"n_holes={attr['n_holes']} != len(interiors)={len(list(poly.interiors))}"
+    )
+    assert attr["n_holes"] >= 1
+
+
+def test_anel_area_liquida_menor_que_shell_solido(superficie_anel):
+    """B3: poly.area (área líquida) < área do shell sólido equivalente."""
+    out = vetorizar_superficie(superficie_anel)
+    assert out["stats"]["total_polys"] >= 1
+    poly = out["geometries"][0]
+    # Shell sólido: mesmo contorno externo mas sem holes
+    shell_solid = Polygon(list(poly.exterior.coords))
+    assert poly.area < shell_solid.area, (
+        f"Área com furo ({poly.area}) deve ser menor que shell sólido ({shell_solid.area})"
+    )
+    # A diferença deve ser significativa (o furo ocupa parte da região)
+    diferenca = shell_solid.area - poly.area
+    assert diferenca > 0, "Diferença de área deve ser positiva"
+
+
+def test_solido_sem_furo_n_holes_zero(superficie_duas_ilhas):
+    """Região sólida (sem furo) → n_holes == 0 (comportamento v1 preservado)."""
+    out = vetorizar_superficie(superficie_duas_ilhas)
+    assert out["stats"]["total_polys"] >= 1
+    for attr in out["attributes"]:
+        assert attr["n_holes"] == 0, (
+            f"Região sólida deve ter n_holes=0, obtido {attr['n_holes']}"
+        )
+
+
+def test_anel_geojson_tem_n_holes(superficie_anel):
+    """GeoJSON deve incluir n_holes nas propriedades do Feature."""
+    out = vetorizar_superficie(superficie_anel)
+    assert out["stats"]["total_polys"] >= 1
+    doc = json.loads(out["geojson"])
+    for feat in doc["features"]:
+        assert "n_holes" in feat["properties"], (
+            "GeoJSON Feature deve ter 'n_holes' nas properties"
+        )
+
+
+def test_furo_pequeno_ignorado():
+    """Furo com área < MIN_AREA_PIXEL deve ser ignorado; polígono fica sólido."""
+    # Anel com furo muito pequeno: furo 2×2 = 4 pixels < MIN_AREA_PIXEL=20
+    sup = np.full((30, 30), 0.1, dtype=np.float32)
+    sup[3:27, 3:27] = 0.9   # shell externo
+    sup[13:15, 13:15] = 0.1  # furo minúsculo 2×2
+    out = vetorizar_superficie(sup)
+    assert out["stats"]["total_polys"] >= 1
+    for attr in out["attributes"]:
+        # Furo pequeno ignorado → polígono deve ser praticamente sólido
+        assert attr["n_holes"] == 0, (
+            "Furo com área < MIN_AREA_PIXEL não deve ser modelado"
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# B5 — casar_poligono_a_bbox: helper público de match IoU
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_casar_poligono_bbox_cobrindo_retorna_geojson():
+    """Bbox que cobre o polígono → retorna string GeoJSON Feature parseável."""
+    sup = np.full((20, 20), 0.1, dtype=np.float32)
+    sup[2:12, 2:12] = 0.9  # blob em linhas/colunas 2-11 (10×10 = 100 pixels)
+    out = vetorizar_superficie(sup)
+    assert out["stats"]["total_polys"] >= 1
+
+    # Bbox cobrindo a região do blob: normalizada para shape=(20,20)
+    # colunas 2-11 → x1=2/20=0.1, x2=11/20=0.55; linhas 2-11 → y1=0.1, y2=0.55
+    bbox = {"x1": 0.05, "y1": 0.05, "x2": 0.65, "y2": 0.65}
+    geom_str = casar_poligono_a_bbox(out, bbox, (20, 20))
+
+    assert geom_str != "", "Bbox cobrindo polígono deve retornar GeoJSON não-vazio"
+    # Deve ser parseável como JSON
+    feat = json.loads(geom_str)
+    assert feat["type"] == "Feature", f"Esperado 'Feature', obtido {feat.get('type')}"
+    assert "geometry" in feat
+    assert "properties" in feat
+
+
+def test_casar_poligono_sem_overlap_retorna_vazio():
+    """Bbox sem overlap com qualquer polígono → retorna string vazia."""
+    sup = np.full((20, 20), 0.1, dtype=np.float32)
+    sup[2:10, 2:10] = 0.9  # blob no canto superior-esquerdo
+    out = vetorizar_superficie(sup)
+    assert out["stats"]["total_polys"] >= 1
+
+    # Bbox no canto inferior-direito: sem overlap com o blob
+    bbox = {"x1": 0.7, "y1": 0.7, "x2": 1.0, "y2": 1.0}
+    geom_str = casar_poligono_a_bbox(out, bbox, (20, 20))
+    assert geom_str == "", f"Bbox sem overlap deve retornar '', obtido: {geom_str!r}"
+
+
+def test_casar_poligono_sem_geometrias_retorna_vazio():
+    """resultado_vet sem geometrias → retorna '' sem exceção."""
+    resultado_vazio = {"geometries": [], "attributes": []}
+    bbox = {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0}
+    geom_str = casar_poligono_a_bbox(resultado_vazio, bbox, (20, 20))
+    assert geom_str == ""
+
+
+def test_casar_poligono_iou_abaixo_limiar_retorna_vazio():
+    """IoU abaixo de IOU_MATCH_MIN → retorna '' mesmo com sobreposição mínima."""
+    from core.config import IOU_MATCH_MIN
+    sup = np.full((20, 20), 0.1, dtype=np.float32)
+    sup[2:10, 2:10] = 0.9  # blob no canto superior-esquerdo
+    out = vetorizar_superficie(sup)
+    assert out["stats"]["total_polys"] >= 1
+
+    # Bbox no canto inferior-direito com sobreposição nula → IoU = 0 < IOU_MATCH_MIN
+    bbox = {"x1": 0.9, "y1": 0.9, "x2": 1.0, "y2": 1.0}
+    geom_str = casar_poligono_a_bbox(out, bbox, (20, 20))
+    assert geom_str == ""

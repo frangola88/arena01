@@ -10,6 +10,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import cv2  # noqa: F401 — pré-carrega cv2 real antes que qualquer test_agent_1_*.py injete mock
 import pytest
 
 
@@ -117,4 +118,26 @@ def superficie_duas_ilhas():
     sup = np.full((20, 20), 0.1, dtype=np.float32)
     sup[1:6, 1:6] = 0.9    # ilha 1
     sup[12:17, 12:17] = 0.9  # ilha 2
+    return sup
+
+
+@pytest.fixture
+def superficie_anel():
+    """Superfície com região em anel (furo central).
+
+    Shell externo: linhas 3-26, colunas 3-26 — valor 0.9 (alta object-ness).
+    Furo interno:  linhas 9-20, colunas 9-20 — valor 0.1 (fundo baixo).
+    Bordas:        valor 0.1 (fundo).
+
+    Dimensão total: 30×30 blocos.
+
+    O shell tem ~432 pixels (30×30 − 12×12 ≈ 900 − 144 = 756 não exatamente;
+    efetivamente: (27-3)*(27-3) − (20-9)*(20-9) = 576 − 121 = 455 pixels).
+    Qualquer polígono extraído dessa superfície deve ter len(poly.interiors) >= 1
+    e poly.area < área do shell sólido equivalente.
+    """
+    import numpy as np
+    sup = np.full((30, 30), 0.1, dtype=np.float32)
+    sup[3:27, 3:27] = 0.9   # shell externo
+    sup[9:21, 9:21] = 0.1   # furo central (reativa o fundo baixo)
     return sup

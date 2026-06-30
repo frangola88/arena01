@@ -43,7 +43,7 @@ from core.verificacoes_cruzadas import verificar_cena, score_qualidade, w_borda_
 from core.segmentacao_cv import detectar_objetos, gerar_icone_anotado
 from core.gazetteer import GazetteerMatcher
 from core.crop_refinador import refinar_crop
-from core.vetorizador_raster import vetorizar_superficie
+from core.vetorizador_raster import vetorizar_superficie, casar_poligono_a_bbox
 
 _log = logging.getLogger("casaiq.agent_1")
 
@@ -183,16 +183,23 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     })
 
     # ─── 0b. VETORIZAÇÃO RASTER→VECTOR: aditiva, não bloqueia ───────────────
-    # Converte a superfície de object-ness em polígonos Shapely (isocontours).
-    # Resultado é apenas logado; não altera contrato de retorno nem bboxes.
+    # Vetoriza a superfície de object-ness passando as bboxes dos objetos para
+    # calcular iou_vs_claude por polígono. Resultado guardado em _vet_resultado
+    # para casar objeto↔polígono no loop abaixo (via casar_poligono_a_bbox).
+    # Falha silenciosa: todos os objetos recebem geometria_vetor="" e o
+    # pipeline continua normalmente.
+    _vet_resultado: dict | None = None
     try:
-        _vet = vetorizar_superficie(cena.superficie)
+        # As bboxes dos objetos são coletadas AQUI para a vetorização única.
+        # Neste ponto objetos_skill ainda não foi definido (vem após a skill),
+        # então passamos lista vazia — o match por IoU acontece depois no loop.
+        _vet_resultado = vetorizar_superficie(cena.superficie)
         _log.info("vetorizacao_raster_resumo", extra={
-            "total_polys":  _vet["stats"]["total_polys"],
-            "total_area":   _vet["stats"]["total_area"],
-            "coverage_pct": _vet["stats"]["coverage_pct"],
-            "latency_ms":   _vet["performance"]["latency_ms"],
-            "geojson_len":  len(_vet["geojson"]),
+            "total_polys":  _vet_resultado["stats"]["total_polys"],
+            "total_area":   _vet_resultado["stats"]["total_area"],
+            "coverage_pct": _vet_resultado["stats"]["coverage_pct"],
+            "latency_ms":   _vet_resultado["performance"]["latency_ms"],
+            "geojson_len":  len(_vet_resultado["geojson"]),
             "foto_id":      foto_id,
         })
     except Exception as _e:
@@ -328,6 +335,28 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
                 "flags": sq["flags"], "foto_id": foto_id,
             })
 
+        # ── Casamento objeto↔polígono vetorial por IoU ───────────────────────
+        # Para cada objeto, casa o melhor polígono da vetorização raster→vector
+        # usando a bbox do objeto (após refinamento DINOv2). Usa casar_poligono_a_bbox
+        # que retorna GeoJSON Feature ou "" se IoU < IOU_MATCH_MIN ou falha.
+        geometria_vetor = ""
+        if _vet_resultado is not None and bbox_norm is not None:
+            try:
+                geometria_vetor = casar_poligono_a_bbox(
+                    _vet_resultado,
+                    bbox_norm,
+                    cena.superficie.shape,
+                )
+                _log.info("geometria_vetor_casada", extra={
+                    "nome":    nome,
+                    "tem_geom": bool(geometria_vetor),
+                    "foto_id": foto_id,
+                })
+            except Exception as _ge:
+                _log.warning("casar_poligono_falhou", extra={
+                    "nome": nome, "erro": str(_ge), "foto_id": foto_id,
+                })
+
         resultado.append({
             "nome": nome,
             "recorte_path": icone_path,
@@ -335,6 +364,7 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
             "_suspeita_bg": "centroide_em_bg" in sq["flags"],
             "_score_qualidade": sq["score"],
             "_flags_qualidade": sq["flags"],
+            "geometria_vetor": geometria_vetor,
         })
 
     _log.info("segmentacao_v7_concluida", extra={
