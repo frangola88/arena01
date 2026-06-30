@@ -3,10 +3,8 @@
 
 Uso:
   notify.py "mensagem livre"
-  notify.py --painel        # snapshot completo do estado
+  notify.py --painel        # snapshot do estado atual
   notify.py --event "label" # evento específico
-
-Lê credenciais de ~/.casaiq_whatsapp.json (mode 600).
 """
 import json, sys, time
 from pathlib import Path
@@ -14,13 +12,13 @@ from urllib.parse import quote
 import urllib.request
 
 CONFIG = Path.home() / '.casaiq_whatsapp.json'
+BATCH  = Path.home() / 'casaiq/batches'
+
 
 def send(text: str) -> tuple[bool, str]:
     cfg = json.loads(CONFIG.read_text())
-    phone = cfg['phone']
-    apikey = cfg['apikey']
-    text = text[:3000]
-    url = f'https://api.callmebot.com/whatsapp.php?phone={phone}&text={quote(text)}&apikey={apikey}'
+    phone, apikey = cfg['phone'], cfg['apikey']
+    url = f'https://api.callmebot.com/whatsapp.php?phone={phone}&text={quote(text[:3000])}&apikey={apikey}'
     try:
         with urllib.request.urlopen(url, timeout=30) as r:
             body = r.read().decode('utf-8', errors='replace')
@@ -28,55 +26,75 @@ def send(text: str) -> tuple[bool, str]:
     except Exception as e:
         return False, f'{type(e).__name__}: {e}'
 
+
+def _batch_status(name: str) -> str:
+    sf = BATCH / name / 'status.json'
+    if not sf.exists():
+        return '—'
+    try:
+        d = json.loads(sf.read_text())
+        done, total = d.get('done', 0), d.get('total', 0)
+        rate = d.get('rate_per_s', 0)
+        eta  = d.get('eta_min', 0)
+        if total <= 0:
+            return f'{done:,} (sem total)'
+        pct = int(100 * done / total)
+        if done >= total:
+            return f'✅ {done:,}/{total:,}'
+        eta_str = f'ETA {eta:.0f}min' if eta > 0 else f'{rate:.1f}/s'
+        return f'⏳ {done:,}/{total:,} ({pct}%) {eta_str}'
+    except Exception:
+        return 'erro status.json'
+
+
+def _coleta_total() -> int:
+    sources = [
+        Path.home() / 'br_vtex/data/export/superpro.jsonl',
+        Path.home() / 'br_vtex/data/export/delupo.jsonl',
+        Path.home() / 'br_vtex/data/export/ferimport.jsonl',
+        Path.home() / 'casaiq_scraper/data/export/screwfix.jsonl',
+        Path.home() / 'br_vtex_fedora_migrate/data/export/kennedy.jsonl',
+        Path.home() / 'br_vtex_fedora_migrate/data/export/minas.jsonl',
+        Path.home() / 'ali_local/data/export/aliexpress.jsonl',
+    ]
+    return sum(sum(1 for _ in open(p)) for p in sources if p.exists())
+
+
 def painel_snapshot() -> str:
-    """Monta snapshot direto de arquivos locais na Oracle (sem SSH)."""
     lines = [f'🤖 *CasaIQ Oracle — {time.strftime("%H:%M %d/%m")}*', '']
 
-    lines.append('*Coleta:*')
-    sources = [
-        ('superpro',  Path.home() / 'br_vtex/data/export/superpro.jsonl'),
-        ('delupo',    Path.home() / 'br_vtex/data/export/delupo.jsonl'),
-        ('ferimport', Path.home() / 'br_vtex/data/export/ferimport.jsonl'),
-        ('screwfix',  Path.home() / 'casaiq_scraper/data/export/screwfix.jsonl'),
-        ('kennedy',   Path.home() / 'br_vtex_fedora_migrate/data/export/kennedy.jsonl'),
-        ('minas',     Path.home() / 'br_vtex_fedora_migrate/data/export/minas.jsonl'),
-        ('ali',       Path.home() / 'ali_local/data/export/aliexpress.jsonl'),
-    ]
-    total = 0
-    for name, path in sources:
-        n = sum(1 for _ in open(path)) if path.exists() else 0
-        total += n
-        lines.append(f'• {name}: {n:,}')
-    lines.append(f'• BR legados: 23.238')
-    lines.append(f'*Total: {total + 23238:,}*')
+    # Batches
+    lines.append('*Pipeline ML:*')
+    lines.append(f'• matting : {_batch_status("01_matting")}')
+    lines.append(f'• dinov2  : {_batch_status("02_dinov2")}')
+    lines.append(f'• faiss   : {_batch_status("03_faiss")}')
     lines.append('')
 
-    lines.append('*Batches:*')
-    for batch in ['01_matting', '02_dinov2', '03_faiss', '04_sqlite_db']:
-        sf = Path.home() / f'casaiq/batches/{batch}/status.json'
-        if sf.exists():
-            try:
-                d = json.loads(sf.read_text())
-                lines.append(f"• {batch}: {d.get('done',0):,}/{d.get('total',0):,} ETA={d.get('eta_min','?')}min")
-            except Exception:
-                lines.append(f'• {batch}: status.json com erro')
-        else:
-            out = Path.home() / f'casaiq/batches/{batch}/output'
-            n = len(list(out.iterdir())) if out.exists() else 0
-            lines.append(f'• {batch}: aguardando ({n} arquivos)')
-    lines.append('')
-
-    hc = Path.home() / 'casaiq/orchestrator/healthcheck.json'
-    if hc.exists():
+    # Gazetteer Oracle (embeddings.npy)
+    emb_file = BATCH / '02_dinov2/embeddings.npy'
+    if emb_file.exists():
+        import struct
+        # lê shape sem numpy: cabeçalho npy tem magic+version+header
         try:
-            h = json.loads(hc.read_text())
-            lines.append(f"*Tmux vivos:* {h['n_alive']}/{h['n_alive']+h['n_dead']}")
-            if h.get('dead'):
-                lines.append(f"⚠️ mortos: {', '.join(h['dead'])}")
+            import numpy as np
+            e = np.load(str(emb_file), mmap_mode='r')
+            n_emb = e.shape[0]
         except Exception:
-            pass
+            n_emb = '?'
+        lines.append(f'*Gazetteer Oracle:* {n_emb:,} emb')
+    else:
+        lines.append('*Gazetteer Oracle:* aguardando encode')
+    lines.append('')
+
+    # Coleta total
+    try:
+        total = _coleta_total()
+        lines.append(f'*Coleta total:* {total:,} itens')
+    except Exception:
+        pass
 
     return '\n'.join(lines)
+
 
 def main():
     if not CONFIG.exists():
@@ -89,14 +107,15 @@ def main():
         msg = painel_snapshot()
     elif arg == '--event':
         label = sys.argv[2] if len(sys.argv) > 2 else 'evento'
-        msg = f'⚡ *CasaIQ evento*\n{time.strftime("%H:%M")} — {label}'
+        msg = f'⚡ *CasaIQ*\n{time.strftime("%H:%M")} — {label}'
     else:
-        msg = arg
+        msg = ' '.join(sys.argv[1:])
 
     ok, body = send(msg)
     print(f'sent={ok}  resp={body[:200]}')
     if not ok:
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

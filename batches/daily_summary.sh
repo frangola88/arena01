@@ -1,63 +1,73 @@
 #!/usr/bin/env bash
-# Resumo diário 07h — comparação com snapshot da véspera.
+# daily_summary.sh — resumo diário com diff desde ontem.
 SNAP_DIR=/home/ubuntu/casaiq/orchestrator/snapshots
+NOTIFY=/home/ubuntu/casaiq/orchestrator/notify.py
+BATCHES=/home/ubuntu/casaiq/batches
 mkdir -p "$SNAP_DIR"
 
 TODAY=$(date +%Y-%m-%d)
-YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
-TODAY_FILE=$SNAP_DIR/snap_$TODAY.txt
-YESTER_FILE=$SNAP_DIR/snap_$YESTERDAY.txt
+YEST=$(date  -d 'yesterday' +%Y-%m-%d)
 
-# Capta números atuais (chaves: frente=valor)
-{
-  echo "ts=$(date '+%Y-%m-%d %H:%M:%S')"
-  for s in superpro delupo ferimport screwfix kennedy minas; do
-    if [ "$s" = screwfix ]; then path=/home/ubuntu/casaiq_scraper/data/export/screwfix.jsonl
-    elif [ "$s" = kennedy ] || [ "$s" = minas ]; then path=/home/ubuntu/br_vtex_fedora_migrate/data/export/$s.jsonl
-    else path=/home/ubuntu/br_vtex/data/export/$s.jsonl; fi
-    n=$(wc -l < $path 2>/dev/null || echo 0)
-    echo "$s=$n"
-  done
-  echo "ali=$(wc -l < /home/ubuntu/ali_local/data/export/aliexpress.jsonl 2>/dev/null || echo 0)"
-  echo "matting=$(ls /home/ubuntu/casaiq/batches/01_matting/output/*.png 2>/dev/null | wc -l)"
-  echo "dinov2=$(ls /home/ubuntu/casaiq/batches/02_dinov2/output 2>/dev/null | wc -l)"
-} > "$TODAY_FILE"
+bat_int() {
+    python3 -c "import json; d=json.load(open('$BATCHES/$1/status.json')); print(int(float(d.get('$2',0))))" 2>/dev/null || echo 0
+}
 
-# Monta mensagem com diff
-msg="☀️ *CasaIQ — Bom dia $(date '+%Y-%m-%d')*"$'\n\n'
+matting_done=$(bat_int 01_matting done)
+matting_tot=$(bat_int  01_matting total)
+matting_eta=$(bat_int  01_matting eta_min)
+dino_done=$(bat_int    02_dinov2  done)
+dino_tot=$(bat_int     02_dinov2  total)
+n_emb=$(wc -l < "$BATCHES/02_dinov2/embeddings_index.jsonl" 2>/dev/null || echo 0)
 
-if [ -f "$YESTER_FILE" ]; then
-  msg+="*Crescimento desde ontem:*"$'\n'
-  while IFS='=' read -r key val_today; do
-    [ "$key" = "ts" ] && continue
-    val_yest=$(grep -E "^$key=" "$YESTER_FILE" 2>/dev/null | cut -d= -f2)
-    val_yest=${val_yest:-0}
-    diff=$((val_today - val_yest))
-    sign=""
-    [ "$diff" -gt 0 ] && sign="+"
-    msg+="• $key: $val_today (${sign}${diff})"$'\n'
-  done < "$TODAY_FILE"
-else
-  msg+="(primeiro snapshot, sem comparação)"$'\n\n*Valores atuais:*'$'\n'
-  while IFS='=' read -r key val; do
-    [ "$key" = "ts" ] && continue
-    msg+="• $key: $val"$'\n'
-  done < "$TODAY_FILE"
-fi
-
-# Soma total
-total=0
-for s in superpro delupo ferimport screwfix kennedy minas ali; do
-  v=$(grep -E "^$s=" "$TODAY_FILE" | cut -d= -f2)
-  total=$((total + ${v:-0}))
+coleta=0
+for f in \
+    /home/ubuntu/br_vtex/data/export/superpro.jsonl \
+    /home/ubuntu/br_vtex/data/export/delupo.jsonl \
+    /home/ubuntu/br_vtex/data/export/ferimport.jsonl \
+    /home/ubuntu/casaiq_scraper/data/export/screwfix.jsonl \
+    /home/ubuntu/br_vtex_fedora_migrate/data/export/kennedy.jsonl \
+    /home/ubuntu/br_vtex_fedora_migrate/data/export/minas.jsonl \
+    /home/ubuntu/ali_local/data/export/aliexpress.jsonl; do
+    [ -f "$f" ] && coleta=$(( coleta + $(wc -l < "$f") ))
 done
-total=$((total + 23238))  # BR legados
-msg+=$'\n*Total coletado:* '"$total"' itens'
 
-# Health
-if [ -f /home/ubuntu/casaiq/orchestrator/healthcheck.json ]; then
-  dead=$(python3 -c "import json; print(','.join(json.load(open('/home/ubuntu/casaiq/orchestrator/healthcheck.json'))['dead']))" 2>/dev/null)
-  [ -n "$dead" ] && msg+=$'\n\n⚠️ *Mortas:* '"$dead"
+echo "matting=$matting_done dino=$dino_done emb=$n_emb coleta=$coleta" > "$SNAP_DIR/snap_$TODAY.txt"
+
+YSNAP=$SNAP_DIR/snap_$YEST.txt
+diff_val() { v=$(grep -o "$1=[0-9]*" "$YSNAP" 2>/dev/null | cut -d= -f2); echo $(( ${2:-0} - ${v:-0} )); }
+d_matt=$(diff_val matting "$matting_done")
+d_dino=$(diff_val dino    "$dino_done")
+d_emb=$(diff_val  emb     "$n_emb")
+d_col=$(diff_val  coleta  "$coleta")
+
+sign() { [ "$1" -gt 0 ] && echo "+$1" || echo "$1"; }
+
+msg="☀️ *CasaIQ — $(date '+%d/%m %H:%M')*"$'\n\n'
+
+if [ "$matting_tot" -gt 0 ] && [ "$matting_done" -ge "$matting_tot" ]; then
+    msg+="✅ *Matting:* ${matting_done}/${matting_tot} concluído"$'\n'
+elif [ "$matting_tot" -gt 0 ]; then
+    pct=$(( matting_done * 100 / matting_tot ))
+    msg+="⏳ *Matting:* ${matting_done}/${matting_tot} (${pct}%) $(sign $d_matt)/dia"$'\n'
+    if [ "$matting_eta" -gt 0 ]; then
+        eta_h=$(( matting_eta / 60 ))
+        eta_m=$(( matting_eta % 60 ))
+        msg+="   → ETA ~${eta_h}h${eta_m}min"$'\n'
+    fi
+else
+    msg+="🎨 *Matting:* aguardando"$'\n'
 fi
 
-python3 /home/ubuntu/casaiq/orchestrator/notify.py "$msg"
+if [ "$dino_tot" -gt 0 ] && [ "$dino_done" -ge "$dino_tot" ]; then
+    msg+="✅ *DINOv2:* ${dino_done}/${dino_tot} concluído"$'\n'
+elif [ "$dino_tot" -gt 0 ]; then
+    pct=$(( dino_done * 100 / dino_tot ))
+    msg+="⏳ *DINOv2:* ${dino_done}/${dino_tot} (${pct}%) $(sign $d_dino)/dia"$'\n'
+else
+    msg+="🧬 *DINOv2:* aguardando matting"$'\n'
+fi
+
+msg+=$'\n'"📦 *Gazetteer Oracle:* ${n_emb} emb $(sign $d_emb)/dia"$'\n'
+msg+="🛒 *Coleta:* ${coleta} itens $(sign $d_col)/dia"$'\n'
+
+python3 "$NOTIFY" "$msg"
