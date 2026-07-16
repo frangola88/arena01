@@ -20,7 +20,7 @@ st(){ echo "$(ts) | $1" > "$STATUS"; log "STATUS=$1"; }
 log "================ expand_gazetteer START (pid $$) ================"
 
 # 1) Verifica se há imagens novas para encodar
-N_IMGS=$(ls "$HOME/dataset_imgs"/*.jpg 2>/dev/null | wc -l)
+N_IMGS=$(find "$HOME/dataset_imgs" -maxdepth 1 -name '*.jpg' | wc -l)
 N_ENC=$(wc -l < "$BASE/embeddings_index.jsonl" 2>/dev/null || echo 0)
 log "imgs no disco: $N_IMGS  já encodadas: $N_ENC"
 if [ "$N_IMGS" -le "$N_ENC" ]; then
