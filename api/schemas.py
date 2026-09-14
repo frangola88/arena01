@@ -22,3 +22,10 @@ class ObjetoUpdate(BaseModel):
 
 class ChatRequest(BaseModel):
     pergunta: str = Field(min_length=1, max_length=MAX_PERGUNTA_CHARS)
+
+class BatchDeleteRequest(BaseModel):
+    ids: List[int]
+
+class BatchMoveRequest(BaseModel):
+    ids: List[int]
+    localizacao_id: int

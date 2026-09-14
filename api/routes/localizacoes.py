@@ -38,6 +38,23 @@ def listar_localizacoes():
         conn.close()
 
 
+@router.get("/categorias")
+def listar_categorias():
+    conn = get_db()
+    try:
+        rows = conn.execute("""
+            SELECT c.id, c.nome, c.grupo, c.icone, COUNT(o.id) AS total_objetos
+            FROM categorias c
+            LEFT JOIN objetos o ON o.categoria_id = c.id
+            GROUP BY c.id
+            ORDER BY c.nome
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+
 @router.delete("/localizacoes/{loc_id}")
 def deletar_localizacao(loc_id: int):
     conn = get_db()

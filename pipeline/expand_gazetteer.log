@@ -69,3 +69,98 @@ DONE  total=59307  antigos=47336  novos=11971
 [2026-06-23 12:00:13] STATUS=verificando
 [2026-06-23 12:00:14] STATUS=CONCLUIDO
 [2026-06-23 12:00:14] ================ expand_gazetteer DONE ================
+[2026-06-27 12:21:52] ================ expand_gazetteer START (pid 10973) ================
+[2026-06-27 12:21:52] STATUS=aguardando_download
+[2026-06-27 12:21:57] download finalizado (processo ausente)
+[2026-06-27 12:21:57] ultima linha download:   warnings.warn(
+[2026-06-27 12:21:58] imgs no disco: 30282
+[2026-06-27 12:21:58] STATUS=backup
+[2026-06-27 12:21:58] backup: embeddings.npy
+[2026-06-27 12:21:58] backup: index_mapping.jsonl
+[2026-06-27 12:21:58] backup: gazetteer.faiss
+[2026-06-27 12:21:58] backup: text_index.json
+[2026-06-27 12:21:58] backup em /home/cuco/projetos/casaiq/data/gazetteer/_archive/pre_expand_20260627_1221
+[2026-06-27 12:21:58] STATUS=encode_all
+[encode_all] carregando facebook/dinov2-small...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/223 [00:00<?, ?it/s]Loading weights:  29%|██▉       | 65/223 [00:00<00:00, 578.26it/s]Loading weights:  60%|█████▉    | 133/223 [00:00<00:00, 561.13it/s]Loading weights: 100%|██████████| 223/223 [00:00<00:00, 793.03it/s]
+[encode_all] dim=384  batch=64
+[encode_all] retomando: 30282 já feitos
+[encode_all] total=30282  pendentes=0
+
+==================================================
+DONE  shape=(30282, 384)  erros=0  tempo=1.4min
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_new.npy
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_index_new.jsonl
+[2026-06-27 12:23:40] encode_all OK
+[2026-06-27 12:23:40] STATUS=merge_rebuild
+=== merge_and_rebuild ===
+[1] Carregando antigos...
+    (59307, 384)  map=59307
+[2] Carregando novos...
+    (30282, 384)  map=30282
+    dedup: 30282 já no gazetteer, 0 novos de fato
+[3] Nada novo para adicionar — gazetteer já está atualizado.
+[2026-06-27 12:23:45] merge_and_rebuild OK
+[2026-06-27 12:23:45] STATUS=verificando
+[2026-06-27 12:23:49] STATUS=CONCLUIDO
+[2026-06-27 12:23:49] ================ expand_gazetteer DONE ================
+[2026-06-29 11:04:59] ================ expand_gazetteer START (pid 21906) ================
+[2026-06-29 11:04:59] STATUS=aguardando_download
+[2026-07-16 17:13:15] ================ expand_gazetteer START (pid 6611) ================
+[2026-07-16 17:13:15] imgs no disco: 39479  já encodadas: 18370
+[2026-07-16 17:13:15] STATUS=backup
+[2026-07-16 17:13:15] backup: embeddings.npy
+[2026-07-16 17:13:15] backup: embeddings_index.jsonl
+[2026-07-16 17:13:15] STATUS=encode_all
+[encode_all] carregando facebook/dinov2-small...
+[encode_all] dim=384  batch=64
+[encode_all] retomando: 30282 já feitos
+[encode_all] total=39479  pendentes=9197
+  30538/39479  2308.1 img/s  ETA 0min  erros=0
+  31050/39479  872.0 img/s  ETA 0min  erros=0
+  31562/39479  539.6 img/s  ETA 0min  erros=0
+  32010/39479  401.6 img/s  ETA 0min  erros=0
+  32522/39479  312.8 img/s  ETA 0min  erros=0
+  33034/39479  262.1 img/s  ETA 0min  erros=0
+  33546/39479  225.0 img/s  ETA 0min  erros=0
+  34058/39479  197.9 img/s  ETA 0min  erros=0
+  34506/39479  180.2 img/s  ETA 0min  erros=0
+  35018/39479  163.9 img/s  ETA 0min  erros=0
+  35530/39479  150.6 img/s  ETA 0min  erros=0
+  36042/39479  139.6 img/s  ETA 0min  erros=0
+  36554/39479  130.2 img/s  ETA 0min  erros=0
+  37002/39479  123.0 img/s  ETA 0min  erros=0
+  37514/39479  115.9 img/s  ETA 0min  erros=0
+  38026/39479  109.5 img/s  ETA 0min  erros=0
+  38538/39479  104.2 img/s  ETA 0min  erros=0
+  39050/39479  99.6 img/s  ETA 0min  erros=0
+
+==================================================
+DONE  shape=(39479, 384)  erros=0  tempo=6.9min
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_new.npy
+  → /home/cuco/projetos/casaiq/pipeline/stage5_encode/embeddings_index_new.jsonl
+[2026-07-16 17:20:12] encode_all OK
+[2026-07-16 17:20:12] STATUS=merge_rebuild
+=== merge_and_rebuild ===
+[1] Carregando antigos...
+    (59307, 384)  map=59307
+[2] Carregando novos...
+    (39479, 384)  map=39479
+    dedup: 30282 já no gazetteer, 9197 novos de fato
+[3] Total: (68504, 384)
+[4] index_mapping...
+[5] Salvando embeddings...
+[6] Rebuild FAISS...
+    68504 vetores
+[7] Salvando index_mapping...
+[8] Rebuild text_index...
+    ok
+[9] Smoke test...
+    top3 dists: [1.0000002 0.9962398 0.9340058]
+
+DONE  total=68504  antigos=59307  novos=9197
+[2026-07-16 17:20:21] merge_and_rebuild OK
+[2026-07-16 17:20:21] STATUS=verificando
+[2026-07-16 17:20:23] STATUS=CONCLUIDO
+[2026-07-16 17:20:23] ================ expand_gazetteer DONE ================

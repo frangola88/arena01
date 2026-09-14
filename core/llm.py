@@ -91,14 +91,14 @@ def _claude_visao(prompt: str, imagem_path: str) -> str:
     }
     body = {
         "model": ANTHROPIC_MODEL,
-        "max_tokens": 8192,
+        "max_tokens": 16384,
         "messages": [{"role": "user", "content": [
             {"type": "image", "source": {"type": "base64", "media_type": mt, "data": data}},
             {"type": "text",  "text": prompt},
         ]}],
     }
     r = httpx.post("https://api.anthropic.com/v1/messages",
-                   headers=headers, json=body, timeout=120)
+                   headers=headers, json=body, timeout=240)
     if r.status_code != 200:
         raise RuntimeError(f"Claude API {r.status_code}: {r.text[:300]}")
     resp = r.json()

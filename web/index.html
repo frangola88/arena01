@@ -2,129 +2,601 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CasaIQ</title>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CasaIQ Pro — Inventário Doméstico Inteligente</title>
+  <link rel="stylesheet" href="style.css?v=5.0" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-<body>
-  <header>
-    <h1>CasaIQ</h1>
-    <nav class="abas">
-      <button class="aba ativa" data-aba="ingerir">Ingerir</button>
-      <button class="aba" data-aba="inventario">Inventário</button>
-      <button class="aba" data-aba="assistente">Assistente</button>
-      <button class="aba" data-aba="localizacoes">Localizações</button>
-    </nav>
+<body class="dark-theme">
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Header Superior Executivo -->
+  <header class="app-header">
+    <div class="header-container">
+      <!-- Marca e Identidade -->
+      <div class="header-brand">
+        <div class="logo-icon">🏠</div>
+        <div class="brand-info">
+          <div class="brand-title">
+            CasaIQ <span class="brand-badge">PRO v4.0</span>
+          </div>
+          <div class="brand-subtitle">Inventário Multimodal & Visão Vetorial</div>
+        </div>
+      </div>
+
+      <!-- Navegação por Abas Centralizada -->
+      <nav class="app-nav" aria-label="Navegação Principal">
+        <button type="button" class="nav-tab active" data-tab="ingerir">
+          <span class="tab-icon">📥</span> <span class="tab-label">Ingerir</span>
+        </button>
+        <button type="button" class="nav-tab" data-tab="inventario">
+          <span class="tab-icon">📦</span> <span class="tab-label">Inventário</span>
+        </button>
+        <button type="button" class="nav-tab" data-tab="assistente">
+          <span class="tab-icon">💬</span> <span class="tab-label">Assistente</span>
+        </button>
+        <button type="button" class="nav-tab" data-tab="localizacoes">
+          <span class="tab-icon">📍</span> <span class="tab-label">Locais</span>
+        </button>
+        <button type="button" class="nav-tab" data-tab="telemetria">
+          <span class="tab-icon">📊</span> <span class="tab-label">Métricas</span>
+        </button>
+      </nav>
+
+      <!-- Status Pills do Sistema -->
+      <div class="header-status">
+        <div class="status-pill" id="pill-modo" title="Modo Operacional">
+          <span class="status-dot green"></span>
+          <span id="txt-modo">Inteligente</span>
+        </div>
+        <div class="status-pill" id="pill-faiss" title="Índice DINOv2 FAISS">
+          <span class="pill-icon">🧠</span>
+          <span id="txt-faiss">DINOv2: 68.5k</span>
+        </div>
+        <div class="status-pill" id="pill-db" title="Total no Banco">
+          <span class="pill-icon">📦</span>
+          <span id="txt-db">0 objetos</span>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <main>
-    <!-- Aba Ingerir -->
-    <section id="aba-ingerir" class="painel ativo">
-      <h2>Adicionar foto ou vídeo</h2>
-      <form id="form-ingerir">
-        <label>
-          Localização:
-          <select id="select-localizacao" required></select>
-        </label>
-        <div id="dropzone" class="dropzone">
-          <input type="file" id="input-foto"
-                 accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-matroska"
-                 hidden />
-          <p>Clique ou arraste uma <strong>foto</strong> ou <strong>vídeo</strong> aqui</p>
-          <p class="dica">Vídeo: 1 frame a cada 2 s, até 10 keyframes (configurável)</p>
-          <img id="preview" hidden />
-          <video id="preview-video" hidden controls muted playsinline></video>
+  <!-- Container Principal -->
+  <main class="app-main">
+
+    <!-- =================================================================== -->
+    <!-- 1. ABA INGERIR (STUDIO MULTIMODAL & OVERLAYS)                       -->
+    <!-- =================================================================== -->
+    <section id="tab-ingerir" class="tab-panel active">
+      <div class="panel-layout-split">
+        <!-- Coluna Esquerda: Formulário de Upload -->
+        <div class="card-box upload-box">
+          <div class="box-header">
+            <div>
+              <h2 class="box-title"><span class="title-icon">📸</span> Nova Ingestão Multimodal</h2>
+              <p class="box-subtitle">Segmentação, recorte e catalogação por IA</p>
+            </div>
+          </div>
+
+          <form id="form-ingerir" class="form-content">
+            <div class="form-group">
+              <div class="label-row">
+                <label for="select-localizacao" class="form-label">Destino da Ingestão:</label>
+                <button type="button" class="btn-link" id="btn-quick-new-loc">+ Novo Local</button>
+              </div>
+              <div class="select-wrapper">
+                <select id="select-localizacao" class="form-control select-custom" required>
+                  <option value="">Selecione ou crie uma localização...</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Dropzone Interativo -->
+            <div id="dropzone" class="dropzone-area">
+              <input type="file" id="input-foto" 
+                     accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-matroska" 
+                     hidden />
+              <div class="dropzone-empty" id="dropzone-empty">
+                <div class="dropzone-icon-box">📤</div>
+                <p class="dropzone-title">Arraste ou clique para selecionar <strong>foto</strong> ou <strong>vídeo</strong></p>
+                <p class="dropzone-desc">Formatos: JPEG, PNG, WEBP, MP4, WEBM e MKV</p>
+              </div>
+              <div class="dropzone-preview" id="dropzone-preview" hidden>
+                <img id="preview-img" class="media-preview-elem" hidden alt="Preview" />
+                <video id="preview-vid" class="media-preview-elem" hidden controls muted></video>
+                <div class="preview-footer">
+                  <span id="preview-filename" class="preview-name">arquivo.jpg</span>
+                  <button type="button" id="btn-remover-arquivo" class="btn-danger-icon" title="Remover Arquivo">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" id="btn-processar" class="btn-action-primary btn-block" disabled>
+              <span class="btn-icon">⚡</span> Iniciar Pipeline de 4 Agentes
+            </button>
+          </form>
+
+          <!-- Stepper de Progresso -->
+          <div id="progress-box" class="progress-box" hidden>
+            <div class="progress-info">
+              <span id="progress-title" class="progress-label">Processando pipeline...</span>
+              <span id="progress-timer" class="progress-clock">0.0s</span>
+            </div>
+            <div class="progress-track">
+              <div id="progress-bar-fill" class="progress-fill"></div>
+            </div>
+            <div id="progress-step-desc" class="progress-step-text">Inicializando visão computacional...</div>
+          </div>
         </div>
-        <button type="submit" id="btn-processar" disabled>Processar</button>
-      </form>
-      <div id="status-ingestao"></div>
-      <div id="objetos-detectados" class="grid-objetos"></div>
-    </section>
 
-    <!-- Aba Inventário -->
-    <section id="aba-inventario" class="painel">
-      <h2>Inventário</h2>
-      <div class="filtros">
-        <input type="text" id="filtro-busca" placeholder="Buscar nome ou palavra-chave..." />
-        <select id="filtro-categoria"><option value="">Todas as categorias</option></select>
-        <select id="filtro-localizacao"><option value="">Todas as localizações</option></select>
-        <select id="filtro-estado">
-          <option value="">Qualquer estado</option>
-          <option value="novo">Novo</option>
-          <option value="bom">Bom</option>
-          <option value="regular">Regular</option>
-          <option value="ruim">Ruim</option>
-        </select>
-        <button id="btn-recarregar">Buscar</button>
+        <!-- Coluna Direita: Studio de Inspeção Visual -->
+        <div class="card-box studio-box">
+          <div class="box-header">
+            <div>
+              <h2 class="box-title"><span class="title-icon">🔬</span> Studio de Inspeção & Detecções</h2>
+              <p class="box-subtitle">Overlays vetoriais e recortes em tempo real</p>
+            </div>
+            <span id="detection-count" class="badge-count">0 detectados</span>
+          </div>
+
+          <!-- Canvas Interativo de Overlays SVG -->
+          <div id="canvas-wrapper" class="canvas-wrapper" hidden>
+            <div class="canvas-toolbar">
+              <label class="toolbar-toggle"><input type="checkbox" id="chk-show-bbox" checked> Bounding Boxes</label>
+              <label class="toolbar-toggle"><input type="checkbox" id="chk-show-poly" checked> Polígonos GeoJSON</label>
+              <span class="toolbar-hint">Clique nas caixas para abrir os detalhes</span>
+            </div>
+            <div class="canvas-viewport">
+              <img id="studio-base-img" class="studio-img" alt="Foto Base" />
+              <svg id="studio-svg-overlay" class="studio-svg"></svg>
+            </div>
+          </div>
+
+          <!-- Grid de Detecções Recentes -->
+          <div id="detected-objects-container" class="detected-objects-grid">
+            <div class="empty-state-card">
+              <div class="empty-icon-glow">📦</div>
+              <h3 class="empty-title">Studio Aguardando Ingestão</h3>
+              <p class="empty-desc">Faça o upload de uma foto ou vídeo ao lado para que o pipeline de 4 agentes processe, recorte e sobreponha os polígonos aqui.</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="grid-inventario" class="grid-objetos"></div>
     </section>
 
-    <!-- Aba Assistente -->
-    <section id="aba-assistente" class="painel">
-      <h2>Assistente</h2>
-      <div class="exemplos">
-        <button class="chip">Onde está meu alicate?</button>
-        <button class="chip">Quantos cabos USB tenho?</button>
-        <button class="chip">Como trocar um chuveiro elétrico?</button>
-        <button class="chip">Liste todos os objetos da cozinha</button>
+    <!-- =================================================================== -->
+    <!-- 2. ABA INVENTÁRIO (FILTROS INLINE, GRID, TABELA & BULK)             -->
+    <!-- =================================================================== -->
+    <section id="tab-inventario" class="tab-panel">
+      <!-- Toolbar Horizontal de Filtros e Busca -->
+      <div class="inventory-toolbar-card">
+        <!-- Linha Superior: Busca Universal e Alternador de Visão -->
+        <div class="toolbar-main-row">
+          <div class="search-field-wrapper">
+            <span class="search-glyph">🔍</span>
+            <input type="text" id="inv-search" class="search-input" placeholder="Buscar objetos por nome, função, material ou palavra-chave..." autocomplete="off" />
+            <button type="button" id="btn-clear-search" class="search-clear-btn" hidden title="Limpar Busca">✕</button>
+          </div>
+
+          <div class="view-toggle-group">
+            <button type="button" class="view-toggle-btn active" data-mode="grid" title="Exibição em Grid">⊞ Grid</button>
+            <button type="button" class="view-toggle-btn" data-mode="table" title="Exibição em Tabela">☰ Tabela</button>
+          </div>
+        </div>
+
+        <!-- Linha Inferior: Filtros Facetados em Linha -->
+        <div class="toolbar-filters-row">
+          <div class="filter-item">
+            <label for="inv-filtro-categoria" class="filter-label">Categoria:</label>
+            <select id="inv-filtro-categoria" class="filter-select">
+              <option value="">Todas as Categorias</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="inv-filtro-localizacao" class="filter-label">Localização:</label>
+            <select id="inv-filtro-localizacao" class="filter-select">
+              <option value="">Todas as Localizações</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="inv-filtro-estado" class="filter-label">Estado:</label>
+            <select id="inv-filtro-estado" class="filter-select">
+              <option value="">Qualquer Estado</option>
+              <option value="novo">Novo</option>
+              <option value="bom">Bom</option>
+              <option value="regular">Regular</option>
+              <option value="ruim">Ruim</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="inv-sort" class="filter-label">Ordenação:</label>
+            <select id="inv-sort" class="filter-select">
+              <option value="recent">Mais Recentes</option>
+              <option value="name_asc">Nome (A-Z)</option>
+              <option value="conf_desc">Maior Confiança</option>
+              <option value="weight_desc">Mais Pesados</option>
+            </select>
+          </div>
+
+          <button type="button" id="btn-refresh-inv" class="btn-refresh" title="Recarregar Inventário">
+            <span class="refresh-icon">🔄</span> Atualizar
+          </button>
+        </div>
       </div>
-      <div id="chat-mensagens" class="chat-mensagens"></div>
-      <form id="form-chat">
-        <input type="text" id="input-pergunta" placeholder="Faça uma pergunta..." autocomplete="off" />
-        <button type="submit">Enviar</button>
-      </form>
+
+      <!-- Barra Flutuante de Ações em Lote -->
+      <div id="bulk-bar" class="bulk-sticky-bar" hidden>
+        <div class="bulk-count-box">
+          <span id="bulk-selected-count" class="count-highlight">0</span> itens selecionados
+        </div>
+        <div class="bulk-controls">
+          <select id="bulk-move-target" class="bulk-select">
+            <option value="">Mover selecionados para...</option>
+          </select>
+          <button type="button" id="btn-bulk-move" class="btn-bulk btn-bulk-primary">Mover</button>
+          <button type="button" id="btn-bulk-delete" class="btn-bulk btn-bulk-danger">Excluir</button>
+          <button type="button" id="btn-bulk-cancel" class="btn-bulk-link">Desmarcar</button>
+        </div>
+      </div>
+
+      <!-- Área de Conteúdo do Inventário -->
+      <div id="inventory-content" class="inventory-area">
+        <!-- Visualização em Grid -->
+        <div id="inv-grid-view" class="objects-grid"></div>
+
+        <!-- Visualização em Tabela -->
+        <div id="inv-table-view" class="objects-table-wrapper" hidden>
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th width="40"><input type="checkbox" id="chk-select-all" title="Selecionar Todos"></th>
+                <th width="60">Ícone</th>
+                <th>Nome do Objeto</th>
+                <th>Categoria</th>
+                <th>Localização</th>
+                <th>Dimensões / Peso</th>
+                <th>Material</th>
+                <th>Cores</th>
+                <th>Confiança</th>
+                <th width="110">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="inv-table-body"></tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
-    <!-- Aba Localizações -->
-    <section id="aba-localizacoes" class="painel">
-      <h2>Localizações</h2>
-      <form id="form-localizacao">
-        <input type="text" id="loc-nome" placeholder="Nome (ex: Caixa A)" required />
-        <input type="text" id="loc-tipo" placeholder="Tipo (caixa, gaveta, prateleira)" value="caixa" />
-        <input type="text" id="loc-comodo" placeholder="Cômodo (ex: Garagem)" />
-        <input type="text" id="loc-descricao" placeholder="Descrição (opcional)" />
-        <button type="submit">Adicionar</button>
-      </form>
-      <ul id="lista-localizacoes"></ul>
+    <!-- =================================================================== -->
+    <!-- 3. ABA ASSISTENTE (CHAT PRO, VOZ & SQL EXPLORER)                    -->
+    <!-- =================================================================== -->
+    <section id="tab-assistente" class="tab-panel">
+      <div class="chat-main-layout">
+        <!-- Sidebar de Sugestões e Defesa -->
+        <div class="card-box chat-sidebar">
+          <div class="box-header">
+            <h3 class="box-title"><span class="title-icon">💡</span> Perguntas Rápidas</h3>
+          </div>
+          <div class="prompts-list">
+            <button type="button" class="prompt-pill" data-prompt="Onde está meu alicate universal?">
+              🔧 Onde está meu alicate?
+            </button>
+            <button type="button" class="prompt-pill" data-prompt="Quais ferramentas e objetos tenho cadastrados?">
+              🏠 O que tenho catalogado?
+            </button>
+            <button type="button" class="prompt-pill" data-prompt="Quantos cabos, fios e adaptadores tenho?">
+              🔌 Quantos cabos e fios?
+            </button>
+            <button type="button" class="prompt-pill" data-prompt="Liste todos os objetos em estado ruim ou regular">
+              ⚠️ Itens para reparo ou troca
+            </button>
+            <button type="button" class="prompt-pill" data-prompt="Quais são os objetos mais pesados da casa?">
+              ⚖️ Objetos mais pesados
+            </button>
+            <button type="button" class="prompt-pill" data-prompt="Como trocar uma resistência de chuveiro com segurança?">
+              🚿 Dicas de manutenção
+            </button>
+          </div>
 
-      <!-- ─── Zona de Perigo: Reset completo do banco ─── -->
-      <section class="zona-perigo">
-        <h3>⚠️ Zona de Perigo</h3>
-        <p class="zona-perigo-aviso">
-          Apaga <strong>todos os objetos, fotos, recortes e ícones</strong>.
-          Mantém apenas as categorias-base do sistema. Útil para começar do zero
-          após testes ou problemas de detecção.
-        </p>
-        <div id="reset-stats" class="reset-stats">Carregando estatísticas…</div>
-        <button type="button" id="btn-resetar-banco" class="btn-perigo">
-          🗑️ Zerar Banco de Dados
-        </button>
-      </section>
+          <div class="box-header" style="margin-top: 1.5rem;">
+            <h3 class="box-title"><span class="title-icon">🛡️</span> Defesa Text-to-SQL</h3>
+          </div>
+          <div class="security-card">
+            <div class="sec-row">✅ Whitelist Léxica Regex</div>
+            <div class="sec-row">✅ LIMIT 100 Forçado</div>
+            <div class="sec-row">✅ Conexão Read-Only C-Level</div>
+            <div class="sec-row">✅ set_authorizer Ativo</div>
+          </div>
+        </div>
+
+        <!-- Painel Central de Conversação -->
+        <div class="card-box chat-panel">
+          <div id="chat-messages" class="messages-flow">
+            <div class="chat-msg assistant">
+              <div class="msg-avatar">👑</div>
+              <div class="msg-content">
+                <div class="msg-author">Assistente CasaIQ Pro</div>
+                <div class="msg-text">
+                  Olá! Eu sou seu assistente inteligente de inventário. Pergunte-me onde seus objetos estão guardados, detalhes técnicos ou procedimentos de manutenção doméstica.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Entrada com Suporte a Voz -->
+          <form id="form-chat" class="chat-input-bar">
+            <button type="button" id="btn-voice-input" class="btn-voice" title="Ditar Pergunta por Voz">
+              🎤
+            </button>
+            <input type="text" id="chat-input-text" class="chat-text-input" 
+                   placeholder="Pergunte ao CasaIQ (ex: 'Onde guardei o multímetro?')..." autocomplete="off" required />
+            <button type="submit" id="btn-chat-send" class="btn-chat-submit">
+              <span>Enviar</span> 🚀
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 4. ABA LOCALIZAÇÕES (GESTÃO DE ESPAÇOS E CÔMODOS)                   -->
+    <!-- =================================================================== -->
+    <section id="tab-localizacoes" class="tab-panel">
+      <div class="panel-layout-split">
+        <!-- Coluna Esquerda: Cadastro de Localização -->
+        <div class="card-box">
+          <div class="box-header">
+            <div>
+              <h2 class="box-title"><span class="title-icon">📍</span> Cadastrar Localização</h2>
+              <p class="box-subtitle">Crie caixas, gavetas, armários e cômodos</p>
+            </div>
+          </div>
+
+          <form id="form-localizacao" class="form-content">
+            <div class="form-group">
+              <label class="form-label">Nome do Espaço / Recipiente:</label>
+              <input type="text" id="loc-nome" class="form-control" placeholder="Ex: Caixa de Ferramentas Principal" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de Recipiente:</label>
+              <div class="select-wrapper">
+                <select id="loc-tipo" class="form-control select-custom">
+                  <option value="caixa">Caixa Organizadora</option>
+                  <option value="gaveta">Gaveta</option>
+                  <option value="prateleira">Prateleira</option>
+                  <option value="armario">Armário</option>
+                  <option value="bancada">Bancada</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cômodo / Ambiente:</label>
+              <input type="text" id="loc-comodo" class="form-control" placeholder="Ex: Garagem, Oficina, Cozinha" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Descrição / Observações:</label>
+              <textarea id="loc-descricao" class="form-control textarea-custom" rows="2" placeholder="Detalhes do posicionamento no espaço..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-action-primary btn-block">➕ Salvar Localização</button>
+          </form>
+
+          <!-- Zona de Perigo: Reset do Banco -->
+          <div class="danger-box">
+            <h4 class="danger-title">⚠️ Manutenção & Reset</h4>
+            <p class="danger-text">Apaga todos os objetos e recortes salvos, recriando o banco com categorias padrão.</p>
+            <button type="button" id="btn-danger-reset" class="btn-danger-outline btn-block">
+              🗑️ Resetar Dados do Banco
+            </button>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Lista de Locais Cadastrados -->
+        <div class="card-box">
+          <div class="box-header">
+            <div>
+              <h2 class="box-title"><span class="title-icon">🗄️</span> Espaços Cadastrados</h2>
+              <p class="box-subtitle">Locais disponíveis para ingestão e guarda</p>
+            </div>
+            <span id="loc-total-count" class="badge-count">0 locais</span>
+          </div>
+
+          <div id="localizacoes-grid" class="locations-cards-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- 5. ABA TELEMETRIA (MÉTRICAS, SAÚDE & LOGS ESTRUTURADOS)             -->
+    <!-- =================================================================== -->
+    <section id="tab-telemetria" class="tab-panel">
+      <!-- 4 Cards de Métricas Principais -->
+      <div class="metrics-row-grid">
+        <div class="metric-widget">
+          <div class="widget-icon cyan">📦</div>
+          <div class="widget-info">
+            <div class="widget-val" id="m-total-objetos">0</div>
+            <div class="widget-label">Total de Objetos</div>
+          </div>
+        </div>
+
+        <div class="metric-widget">
+          <div class="widget-icon emerald">📸</div>
+          <div class="widget-info">
+            <div class="widget-val" id="m-total-fotos">0</div>
+            <div class="widget-label">Fotos Processadas</div>
+          </div>
+        </div>
+
+        <div class="metric-widget">
+          <div class="widget-icon purple">🧠</div>
+          <div class="widget-info">
+            <div class="widget-val" id="m-faiss-size">68.5k</div>
+            <div class="widget-label">Vetores DINOv2 FAISS</div>
+          </div>
+        </div>
+
+        <div class="metric-widget">
+          <div class="widget-icon amber">💾</div>
+          <div class="widget-info">
+            <div class="widget-val" id="m-db-size">~80 KB</div>
+            <div class="widget-label">Tamanho SQLite WAL</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs Estruturados ao Vivo -->
+      <div class="card-box" style="margin-top: 1.25rem;">
+        <div class="box-header">
+          <div>
+            <h2 class="box-title"><span class="title-icon">📜</span> Logs Estruturados JSON do Servidor</h2>
+            <p class="box-subtitle">Telemetria operacional e stream de eventos</p>
+          </div>
+          <button type="button" id="btn-refresh-logs" class="btn-refresh" title="Atualizar Logs">
+            <span class="refresh-icon">🔄</span> Atualizar
+          </button>
+        </div>
+        <div id="logs-terminal" class="terminal-view">
+          <div class="log-row info">[SISTEMA] Conectado e aguardando eventos operacionais...</div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <!-- Viewer de foto original (abre com clique direito no card) -->
-  <div id="foto-viewer-overlay" class="foto-viewer-overlay" hidden></div>
-  <div id="foto-viewer" class="foto-viewer" hidden>
-    <button id="foto-viewer-fechar" class="foto-viewer-fechar">&times;</button>
-    <div id="foto-viewer-titulo" class="foto-viewer-titulo"></div>
-    <img id="foto-viewer-img" class="foto-viewer-img" alt="Foto original" />
-  </div>
-
-  <!-- Modal de detalhes/edição -->
-  <div id="modal" class="modal-bg" hidden>
-    <div class="modal-conteudo">
-      <button class="fechar" id="modal-fechar">&times;</button>
-      <div id="modal-corpo"></div>
+  <!-- =================================================================== -->
+  <!-- DRAWER LATERAL DE DETALHES DO OBJETO (SLIDE-OVER)                  -->
+  <!-- =================================================================== -->
+  <div id="drawer-backdrop" class="drawer-overlay" hidden></div>
+  <aside id="object-drawer" class="drawer-sidebar" hidden>
+    <div class="drawer-top-bar">
+      <h3 id="drawer-obj-name" class="drawer-heading">Detalhes do Objeto</h3>
+      <button type="button" id="btn-close-drawer" class="btn-close-drawer" title="Fechar">✕</button>
     </div>
-  </div>
 
-  <footer id="rodape">
-    <span id="badge-modo">Modo: carregando…</span>
-  </footer>
+    <div class="drawer-scroll-body">
+      <!-- Miniaturas de Ícone e Recorte -->
+      <div class="drawer-thumbs-grid">
+        <div class="thumb-card" id="drawer-box-icone" title="Ícone Normalizado">
+          <img id="drawer-icone-img" class="thumb-img" alt="Ícone" />
+          <div id="drawer-icone-placeholder" class="thumb-ph">📦</div>
+          <span class="thumb-tag" id="drawer-icone-fonte">Ícone</span>
+        </div>
+        <div class="thumb-card" id="drawer-box-recorte" title="Recorte Original">
+          <img id="drawer-recorte-img" class="thumb-img" alt="Recorte" />
+          <div id="drawer-recorte-placeholder" class="thumb-ph">✂️</div>
+          <span class="thumb-tag">Recorte</span>
+        </div>
+      </div>
 
-  <script src="progress.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+      <!-- Formulário de Edição -->
+      <form id="form-drawer-edit" class="drawer-form-content">
+        <input type="hidden" id="drawer-obj-id" />
+
+        <div class="form-group">
+          <label class="form-label">Nome do Objeto:</label>
+          <input type="text" id="drawer-edit-nome" class="form-control" required />
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Categoria:</label>
+            <div class="select-wrapper">
+              <select id="drawer-edit-categoria" class="form-control select-custom"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Localização:</label>
+            <div class="select-wrapper">
+              <select id="drawer-edit-localizacao" class="form-control select-custom"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Dimensões Est.:</label>
+            <input type="text" id="drawer-edit-tamanho" class="form-control" placeholder="ex: 18 x 5 x 2 cm" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Peso Est. (g):</label>
+            <input type="number" id="drawer-edit-peso" class="form-control" placeholder="ex: 280" />
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">Material:</label>
+            <input type="text" id="drawer-edit-material" class="form-control" placeholder="ex: Aço cromo-vanádio" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado:</label>
+            <div class="select-wrapper">
+              <select id="drawer-edit-estado" class="form-control select-custom">
+                <option value="novo">Novo</option>
+                <option value="bom">Bom</option>
+                <option value="regular">Regular</option>
+                <option value="ruim">Ruim</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Função Principal:</label>
+          <input type="text" id="drawer-edit-funcao" class="form-control" placeholder="Finalidade prática do objeto..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Paleta de Cores Dominantes (`cores_json`):</label>
+          <div id="drawer-colors-palette" class="palette-chips-row"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Polígono Vetorial GeoJSON (`geometria_vetor`):</label>
+          <div id="drawer-polygon-preview" class="geo-status-box"></div>
+        </div>
+
+        <div class="drawer-btn-row">
+          <button type="submit" class="btn-action-primary flex-1">💾 Salvar Alterações</button>
+          <button type="button" id="btn-drawer-delete" class="btn-danger-outline">🗑️ Excluir</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Modal Rápido de Criação de Localização -->
+  <dialog id="modal-quick-loc" class="app-dialog">
+    <div class="dialog-box">
+      <div class="dialog-header">
+        <h3 class="dialog-title">📍 Nova Localização</h3>
+        <button type="button" id="btn-close-quick-loc" class="dialog-close-btn">✕</button>
+      </div>
+      <form id="form-quick-loc" class="form-content">
+        <div class="form-group">
+          <label class="form-label">Nome:</label>
+          <input type="text" id="quick-loc-nome" class="form-control" placeholder="Ex: Gaveta de Chaves" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cômodo:</label>
+          <input type="text" id="quick-loc-comodo" class="form-control" placeholder="Ex: Garagem" />
+        </div>
+        <button type="submit" class="btn-action-primary btn-block">Salvar Localização</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script src="app.js?v=5.0"></script>
 </body>
 </html>

@@ -218,6 +218,7 @@ def processar_foto(caminho_foto: str, localizacao_id: int, foto_db_id: int) -> N
                 )
                 conn.commit()
                 inseridos += 1
+                progresso("enriquecendo", f"Catalogado {idx}/{total}: {enriquecido.get('nome', nome_sugerido)}", idx, total)
 
             except Exception as e:
                 _log.warning("erro_objeto", extra={

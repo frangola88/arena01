@@ -285,3 +285,81 @@ def test_videos_ingerir_localizacao_inexistente_responde_404(client, mocker):
 def test_videos_status_inexistente_responde_404(client):
     r = client.get("/api/videos/99999/status")
     assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# /api/categorias
+# ---------------------------------------------------------------------------
+
+def test_categorias_listar_retorna_lista(client):
+    r = client.get("/api/categorias")
+    assert r.status_code == 200
+    cats = r.json()
+    assert isinstance(cats, list)
+    assert len(cats) > 0
+    primeira = cats[0]
+    assert "nome" in primeira and "total_objetos" in primeira
+
+
+# ---------------------------------------------------------------------------
+# /api/objetos batch operations
+# ---------------------------------------------------------------------------
+
+def test_objetos_batch_delete_e_move(client, db_temp):
+    from core.database import get_db
+    conn = get_db()
+    try:
+        conn.execute("INSERT INTO localizacoes (id, nome) VALUES (10, 'Loc A'), (20, 'Loc B')")
+        conn.execute("INSERT INTO objetos (id, nome, localizacao_id) VALUES (101, 'Item 1', 10), (102, 'Item 2', 10)")
+        conn.commit()
+    finally:
+        conn.close()
+
+    r_move = client.post("/api/objetos/batch-move", json={"ids": [101], "localizacao_id": 20})
+    assert r_move.status_code == 200
+    assert r_move.json()["movidos"] == 1
+
+    r_del = client.post("/api/objetos/batch-delete", json={"ids": [102]})
+    assert r_del.status_code == 200
+    assert r_del.json()["deletados"] == 1
+
+    r_empty = client.post("/api/objetos/batch-delete", json={"ids": []})
+    assert r_empty.status_code == 200
+    assert r_empty.json()["deletados"] == 0
+
+
+# ---------------------------------------------------------------------------
+# /api/fotos/progresso, /cancelar e /reprocessar
+# ---------------------------------------------------------------------------
+
+def test_fotos_progresso_cancelar_e_reprocessar(client, db_temp, mocker, tmp_path):
+    mock_proc = mocker.patch("api.routes.fotos.processar_foto")
+    fake_img = tmp_path / "fake.jpg"
+    fake_img.write_bytes(b"dummy image data")
+
+    from core.database import get_db
+    conn = get_db()
+    try:
+        conn.execute("INSERT INTO localizacoes (id, nome) VALUES (1, 'Sala')")
+        cursor = conn.execute(
+            "INSERT INTO fotos_processadas (caminho, localizacao_id, status) VALUES (?,?,?)",
+            (str(fake_img), 1, "processando")
+        )
+        conn.commit()
+        foto_id = cursor.lastrowid
+    finally:
+        conn.close()
+
+    r_prog = client.get(f"/api/fotos/{foto_id}/progresso")
+    assert r_prog.status_code == 200
+    assert r_prog.json()["id"] == foto_id
+
+    r_canc = client.post(f"/api/fotos/{foto_id}/cancelar")
+    assert r_canc.status_code == 200
+    assert r_canc.json()["foto_id"] == foto_id
+
+    r_reproc = client.post(f"/api/fotos/{foto_id}/reprocessar")
+    assert r_reproc.status_code == 200
+    assert r_reproc.json()["ok"] is True
+    mock_proc.assert_called_once()
+

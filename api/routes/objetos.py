@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from core.database import get_db
-from api.schemas import ObjetoUpdate
+from api.schemas import ObjetoUpdate, BatchDeleteRequest, BatchMoveRequest
 
 router = APIRouter()
 
@@ -101,3 +101,38 @@ def deletar_objeto(obj_id: int):
         return {"ok": True, "deletado_id": obj_id}
     finally:
         conn.close()
+
+
+@router.post("/objetos/batch-delete")
+def deletar_objetos_em_lote(dados: BatchDeleteRequest):
+    ids = dados.ids
+    if not ids:
+        return {"ok": True, "deletados": 0}
+    conn = get_db()
+    try:
+        placeholders = ",".join("?" for _ in ids)
+        cursor = conn.execute(f"DELETE FROM objetos WHERE id IN ({placeholders})", ids)
+        conn.commit()
+        return {"ok": True, "deletados": cursor.rowcount}
+    finally:
+        conn.close()
+
+
+@router.post("/objetos/batch-move")
+def mover_objetos_em_lote(dados: BatchMoveRequest):
+    ids = dados.ids
+    localizacao_id = dados.localizacao_id
+    if not ids or localizacao_id is None:
+        return {"ok": True, "movidos": 0}
+    conn = get_db()
+    try:
+        placeholders = ",".join("?" for _ in ids)
+        cursor = conn.execute(
+            f"UPDATE objetos SET localizacao_id=?, revisado_pelo_usuario=1 WHERE id IN ({placeholders})",
+            [localizacao_id] + ids
+        )
+        conn.commit()
+        return {"ok": True, "movidos": cursor.rowcount}
+    finally:
+        conn.close()
+

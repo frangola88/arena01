@@ -1,0 +1,601 @@
+{
+  "timestamp": "2026-07-16T17:47:41.971553",
+  "n_fotos": 5,
+  "fotos": [
+    {
+      "arquivo": "IMG_20260324_153910599.jpg",
+      "n_objetos": 19,
+      "n_com_score": 19,
+      "objetos": [
+        {
+          "nome": "balde",
+          "score": 0.411,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "regua",
+          "score": 0.764,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda phillips",
+          "score": 0.555,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.655,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda phillips",
+          "score": 0.53,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda phillips",
+          "score": 0.859,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda phillips",
+          "score": 0.55,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda chata",
+          "score": 0.532,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.689,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.699,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda chata",
+          "score": 0.825,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.521,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.45,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.533,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.415,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.564,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.675,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.552,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.554,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.5964736842105264,
+      "score_min": 0.411,
+      "score_max": 0.859,
+      "score_std": 0.1243252815129276
+    },
+    {
+      "arquivo": "IMG_20260602_185719031.jpg",
+      "n_objetos": 3,
+      "n_com_score": 3,
+      "objetos": [
+        {
+          "nome": "alicate de bico curvo",
+          "score": 0.712,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "alicate de corte",
+          "score": 0.552,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "decapador de fios",
+          "score": 0.729,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.6643333333333333,
+      "score_min": 0.552,
+      "score_max": 0.729,
+      "score_std": 0.07973428093082392
+    },
+    {
+      "arquivo": "IMG_20260610_112623028.jpg",
+      "n_objetos": 14,
+      "n_com_score": 14,
+      "objetos": [
+        {
+          "nome": "kit de entalhe em madeira",
+          "score": 0.687,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "arco de serra",
+          "score": 0.728,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "lâminas de reposição para arco de serra",
+          "score": 0.569,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão",
+          "score": 0.407,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "arco de coping saw",
+          "score": 0.425,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "arco de serra de fio",
+          "score": 0.545,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "esquadro de marcação",
+          "score": 0.52,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ferramenta de gancho",
+          "score": 0.73,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ferramenta de gancho",
+          "score": 0.644,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ferramenta de gancho",
+          "score": 0.693,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave l (allen)",
+          "score": 0.535,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ferramenta de ponteiro com cabo de madeira",
+          "score": 0.558,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão",
+          "score": 0.541,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão",
+          "score": 0.571,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.5823571428571429,
+      "score_min": 0.407,
+      "score_max": 0.73,
+      "score_std": 0.09843461001588615
+    },
+    {
+      "arquivo": "IMG_mestra04semflash.jpg",
+      "n_objetos": 15,
+      "n_com_score": 15,
+      "objetos": [
+        {
+          "nome": "formão de entalhe",
+          "score": 0.589,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão de entalhe",
+          "score": 0.765,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão de entalhe curvo",
+          "score": 0.754,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão de entalhe",
+          "score": 0.737,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "esquadro",
+          "score": 0.676,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "lâmina de reposição",
+          "score": 0.554,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "arco de serra",
+          "score": 0.444,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.578,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.574,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "gancho de arame",
+          "score": 0.7,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "arco de serra",
+          "score": 0.7,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.695,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.348,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "gancho metálico",
+          "score": 0.569,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "kit de entalhe de madeira",
+          "score": 0.542,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.615,
+      "score_min": 0.348,
+      "score_max": 0.765,
+      "score_std": 0.1145128813714859
+    },
+    {
+      "arquivo": "IMG_mestra04comflash.jpg",
+      "n_objetos": 15,
+      "n_com_score": 15,
+      "objetos": [
+        {
+          "nome": "formão de entalhe",
+          "score": 0.427,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "formão de entalhe",
+          "score": 0.725,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão de entalhe",
+          "score": 0.714,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "formão de entalhe",
+          "score": 0.701,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "serra de arco",
+          "score": 0.765,
+          "flags": [],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "lâmina de reposição para serra",
+          "score": 0.525,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "arco de serra",
+          "score": 0.394,
+          "flags": [
+            "centroide_em_bg",
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": true
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.738,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "chave de fenda",
+          "score": 0.546,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ferramenta de corte curvada",
+          "score": 0.498,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "lima ou grosa",
+          "score": 0.506,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "arco de serra",
+          "score": 0.637,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ponteiro ou vazador",
+          "score": 0.68,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "ponteiro ou vazador",
+          "score": 0.489,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        },
+        {
+          "nome": "conjunto de entalhe em embalagem",
+          "score": 0.498,
+          "flags": [
+            "baixa_forca_cena"
+          ],
+          "suspeita_bg": false
+        }
+      ],
+      "score_medio": 0.5895333333333335,
+      "score_min": 0.394,
+      "score_max": 0.765,
+      "score_std": 0.11946763392465573
+    }
+  ],
+  "estatisticas_globais": {
+    "n_scores_coletados": 66,
+    "score_medio_global": 0.5991969696969697,
+    "score_min_global": 0.348,
+    "score_max_global": 0.859,
+    "score_std_global": 0.11554708074895333,
+    "percentil_25": 0.5305,
+    "percentil_50": 0.569,
+    "percentil_75": 0.69975,
+    "flags_encontradas": [
+      [
+        "baixa_forca_cena",
+        58
+      ],
+      [
+        "centroide_em_bg",
+        8
+      ]
+    ]
+  }
+}

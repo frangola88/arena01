@@ -1,14 +1,37 @@
-# CasaIQ v3 — Status do Projeto
+# CasaIQ v4.0 — Status do Projeto
 
 > Documento de progresso. Lê-se de cima pra baixo: o que é o projeto,
 > como está organizado, o que já foi feito, e o que ainda falta.
-> Última atualização: 2026-06-23 · 314 testes em ~2,8s.
+> Última atualização: 2026-09-14 · 404 testes em ~4-8s (100% de aprovação).
 
 ---
 
-## 0. Atualizações recentes (2026-06)
+## 0. Atualizações recentes
 
-### Sessão 2026-06-27 (HOJE)
+### Sessão 2026-09-14 (Conclave & Tornado Protocol — Ajuste Monumental)
+
+- **Fast-Path no `crop_refinador.py` (300s ➔ 15s)**: Se a análise global do Claude Sonnet já forneceu `bbox_normalizada` com confiança $\ge 0.70$, o recorte final com matting e spotlight é aplicado diretamente sem disparar dezenas de chamadas externas de Claude redundantes. Cobertura de `crop_refinador.py` saltou de 14% para 68%.
+- **Auto-Reconciliação no Boot (`api/app.py`)**: Rotina `_reconciliar_jobs_orfaos()` no `lifespan` do FastAPI detecta jobs congelados em `processando` ou `pendente` após reinício do servidor e os transita para `erro`, destravando o banco e a interface.
+- **Endpoint de Reprocessamento (`POST /api/fotos/{id}/reprocessar`)**: Permite re-enfileirar fotos com falha limpando dados parciais.
+- **Tipagem Estrita nos Endpoints Batch**: `BatchDeleteRequest` e `BatchMoveRequest` integrados com validação Pydantic no `api/routes/objetos.py`.
+- **Suporte Mobile PWA**: Manifesto `web/manifest.json` criado, tags mobile no `web/index.html` e parsing de JSON no polling de progresso em `web/app.js`.
+- **404 testes** passando com 100% de sucesso.
+
+### Sessão 2026-08-24 (Justice League Trinity Protocol 2.0)
+
+- **Nova Interface CasaIQ Pro v4.0 🚀 IMPLANTADA**: Redesenho completo do frontend (`web/index.html`, `web/style.css`, `web/app.js`) com foco em estabilidade, praticidade e robustez visual:
+  - **Studio Multimodal & Overlays Vetoriais**: Visualizador com sobreposição de Bounding Boxes interativas e Polígonos GeoJSON (U2Net/Douglas-Peucker) sobre a foto original.
+  - **Inventário Facetado & Bulk Actions**: Alternância Grid/Tabela, ordenação multi-critério e barra flutuante de ações em lote (`/api/objetos/batch-delete` e `/api/objetos/batch-move`).
+  - **Drawer Lateral de Detalhes (Slide-over)**: Edição em tempo real, paleta `cores_json` interativa e inspeção de grandezas físicas ($cm$, $g$, material).
+  - **Assistente Conversacional & Voz**: Entrada por comando de voz (Web Speech Recognition) e síntese de voz, com visualização da query SQL executada sob defesa em 3 camadas.
+  - **Telemetria & Observabilidade**: Dashboard ao vivo com métricas do banco, integridade do SQLite WAL e visualizador de logs estruturados JSON.
+- **Novos Endpoints de API Adicionados**: `GET /api/categorias`, `POST /api/objetos/batch-delete`, `POST /api/objetos/batch-move`.
+- **Integração com o Vault Obsidian da Justice League**: Mapeamento AST Graphify de 156 arquivos (1.059 nós e 903 arestas de código) e integração com o `🗺️ Justice_League_Master.canvas`.
+- **Gazetteer Visual DINOv2 FAISS**: Expandido para **68.504 embeddings** de dimensão $D=384$ e indexado no FAISS `IndexFlatIP`.
+- **397 testes** passando com 100% de sucesso.
+
+### Sessão 2026-06-27 (referência)
+
 
 - **Gate W(y) ✅ LIGADO**: `agents/agent_1_segmentador.py:L222-233`. Rejeita bbox
   refinada pelo DINOv2 se object-ness fora da bbox > 0.5 (objeto cortado).

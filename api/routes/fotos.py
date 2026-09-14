@@ -253,3 +253,45 @@ def cancelar_processamento_foto(foto_id: int):
         return {"mensagem": "Processamento cancelado", "foto_id": foto_id}
     finally:
         conn.close()
+
+
+@router.post("/fotos/{foto_id}/reprocessar")
+def reprocessar_foto(foto_id: int, background_tasks: BackgroundTasks):
+    """
+    Reprocessa uma foto que falhou ou foi interrompida.
+    Limpa eventuais objetos parciais criados e re-enfileira o processamento.
+    """
+    conn = get_db()
+    try:
+        foto = conn.execute(
+            "SELECT id, caminho, localizacao_id, status FROM fotos_processadas WHERE id = ?",
+            (foto_id,)
+        ).fetchone()
+
+        if not foto:
+            raise HTTPException(status_code=404, detail="Foto não encontrada")
+
+        caminho = foto["caminho"]
+        localizacao_id = foto["localizacao_id"]
+
+        if not Path(caminho).exists():
+            raise HTTPException(status_code=400, detail="Arquivo original não encontrado no disco")
+
+        # Limpar objetos previamente associados a esta foto
+        conn.execute("DELETE FROM objetos WHERE foto_original_path = ?", (caminho,))
+        conn.execute(
+            """UPDATE fotos_processadas
+               SET status = 'pendente',
+                   erro_mensagem = NULL,
+                   concluido_em = NULL,
+                   progresso = NULL
+               WHERE id = ?""",
+            (foto_id,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    background_tasks.add_task(processar_foto, caminho, localizacao_id, foto_id)
+    return {"ok": True, "mensagem": "Reprocessamento iniciado", "foto_id": foto_id}
+

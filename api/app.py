@@ -24,10 +24,48 @@ from api.routes.admin           import router as r_admin
 _log = logging.getLogger("casaiq.app")
 
 
+def _reconciliar_jobs_orfaos() -> None:
+    """
+    Reconciliação no boot: se o processo anterior foi finalizado/reiniciado
+    enquanto fotos ou vídeos estavam sendo processados, marca-os como erro
+    para destravar a interface e permitir reprocessamento.
+    """
+    try:
+        from core.database import get_db
+        conn = get_db()
+        try:
+            cursor_fotos = conn.execute("""
+                UPDATE fotos_processadas
+                SET status = 'erro',
+                    erro_mensagem = 'Processamento interrompido por reinício do servidor',
+                    concluido_em = CURRENT_TIMESTAMP
+                WHERE status IN ('pendente', 'processando')
+            """)
+            cursor_videos = conn.execute("""
+                UPDATE videos_processados
+                SET status = 'erro',
+                    erro_mensagem = 'Processamento interrompido por reinício do servidor',
+                    concluido_em = CURRENT_TIMESTAMP
+                WHERE status IN ('pendente', 'processando')
+            """)
+            conn.commit()
+            total_reconciliados = cursor_fotos.rowcount + cursor_videos.rowcount
+            if total_reconciliados > 0:
+                _log.warning("jobs_orfaos_reconciliados", extra={
+                    "fotos": cursor_fotos.rowcount,
+                    "videos": cursor_videos.rowcount,
+                })
+        finally:
+            conn.close()
+    except Exception as e:
+        _log.error("erro_reconciliacao_jobs_orfaos", extra={"erro": str(e)})
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
     init_db()
+    _reconciliar_jobs_orfaos()
     _log.info("startup", extra={"descricao_modo": descricao_modo()})
     yield
 

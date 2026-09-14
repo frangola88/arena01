@@ -370,6 +370,7 @@ def segmentar_foto(caminho_foto: str, foto_id: int) -> list[dict]:
     _log.info("segmentacao_v7_concluida", extra={
         "objetos_finais": len(resultado),
         "nomes": [r["nome"] for r in resultado],
+        "S1_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S1_bbox_direta"),
         "S2_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S2_bbox"),
         "S3_bbox":  sum(1 for r in resultado if r["_fonte_bbox"] == "S3_bbox"),
         "fallback": sum(1 for r in resultado if "fallback" in r["_fonte_bbox"]),

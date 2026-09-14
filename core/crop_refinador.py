@@ -266,11 +266,27 @@ def refinar_crop(caminho_foto: str, obj: dict, saida: str,
         nome          : nome do objeto
 
     Returns:
-        (saida, tag) — tag: 'S2_bbox' | 'S2.5_bbox_expandida' | 'S3_bbox'
+        (saida, tag) — tag: 'S1_bbox_direta' | 'S2_bbox' | 'S2.5_bbox_expandida' | 'S3_bbox'
     """
     img_bgr, _ = _carregar_imagem_orientada(caminho_foto)
     H, W = img_bgr.shape[:2]
     cor = PALETA_BGR[(numero - 1) % len(PALETA_BGR)]
+
+    # ── Fast Path (S1 direta): se bbox já existe e confiança >= 0.70, pula Claude ──
+    bbox_in = obj.get("bbox_normalizada")
+    confianca_in = float(obj.get("confianca", 0.0) or 0.0)
+    forcar_refinamento = bool(obj.get("_forcar_refinamento", False))
+
+    if bbox_in and confianca_in >= 0.70 and not forcar_refinamento:
+        crop_out = _gerar_crop_final(img_bgr, bbox_in, W, H, numero, nome, cor)
+        if crop_out is not None:
+            Path(saida).parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(saida, crop_out)
+            _log.info("crop_fast_path", extra={
+                "nome": nome, "conf": f"{confianca_in:.2f}",
+                "tag": "S1_bbox_direta", "foto": Path(caminho_foto).name,
+            })
+            return saida, "S1_bbox_direta"
 
     # ── Stage 2 ───────────────────────────────────────────────────────────────
     crop_rough, origem = _crop_generoso(img_bgr, obj, W, H)
