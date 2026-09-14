@@ -132,8 +132,19 @@ function setupDropzone() {
   const btnRemover = document.getElementById("btn-remover-arquivo");
   const btnProcessar = document.getElementById("btn-processar");
   const form = document.getElementById("form-ingerir");
+  const btnCamera = document.getElementById("btn-camera");
+  const cameraInput = document.getElementById("input-camera");
 
   if (!dropzone || !fileInput) return;
+
+  if (btnCamera && cameraInput) {
+    btnCamera.addEventListener("click", () => cameraInput.click());
+    cameraInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleFileSelected(e.target.files[0]);
+      }
+    });
+  }
 
   dropzone.addEventListener("click", (e) => {
     if (e.target !== btnRemover && !state.selectedFile) {
@@ -166,6 +177,7 @@ function setupDropzone() {
     e.stopPropagation();
     state.selectedFile = null;
     fileInput.value = "";
+    if (cameraInput) cameraInput.value = "";
     emptyView.hidden = false;
     previewView.hidden = true;
     previewImg.hidden = true;

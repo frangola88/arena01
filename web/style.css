@@ -345,6 +345,32 @@ body {
   gap: 0.85rem;
 }
 
+/* ─── Botão Câmera Direta Mobile ────────────────────────────────────────── */
+.btn-camera-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: var(--radius-md);
+  color: #38bdf8;
+  font-weight: 650;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-bottom: 0.85rem;
+  transition: var(--transition);
+}
+
+.btn-camera-action:hover {
+  background: rgba(6, 182, 212, 0.22);
+  border-color: #06b6d4;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(6, 182, 212, 0.2);
+}
+
 /* ─── Botões Padrão ─────────────────────────────────────────────────────── */
 .btn-action-primary {
   background-color: var(--cyan-primary);

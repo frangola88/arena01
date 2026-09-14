@@ -52,3 +52,5 @@ pipeline/stage5_encode/*.log
 
 # Relatórios de execução do pipeline (artefatos)
 pipeline_reports/
+.coverage
+.coverage.*

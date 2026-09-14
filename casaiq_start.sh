@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# CasaIQ — Script de Inicialização Rápida & Verificação de Saúde
-# Uso: ./casaiq_start.sh
+# CasaIQ Pro v4.0 — Script de Inicialização Rápida & Verificação de Saúde
+# Uso: ./casaiq_start.sh [--no-inbox]
 
 set -e
 
@@ -45,9 +45,28 @@ conn.close()
     fi
 fi
 
-# 4. Iniciar Servidor
-echo "🚀 [OK] Servidor iniciando em http://0.0.0.0:8000"
-echo "   Pressione Ctrl+C para encerrar."
+# 4. Estrutura do Inbox Watcher (Zero-Click Ingest)
+mkdir -p storage/inbox/processados storage/inbox/erros storage/fotos_originais storage/videos_originais
+echo "📥 [OK] Pasta Inbox monitorada: storage/inbox/"
+
+# Iniciar Inbox Watcher em background (se não desabilitado)
+WATCHER_PID=""
+if [[ "${1:-}" != "--no-inbox" ]]; then
+    "$PYTHON_BIN" scripts/inbox_watcher.py --daemon >/dev/null 2>&1 &
+    WATCHER_PID=$!
+    echo "👁️  [OK] Inbox Watcher ativo em segundo plano (PID: $WATCHER_PID)"
+    trap 'echo -e "\n🛑 Encerrando CasaIQ e Inbox Watcher..."; kill $WATCHER_PID 2>/dev/null || true; exit 0' INT TERM EXIT
+fi
+
+# 5. Detecção de IP LAN para Acesso Móvel PWA
+LAN_IP=$(ip route get 1 2>/dev/null | awk '{print $7}')
+echo "🌐 ========================================================="
+echo "🚀 [OK] Servidor Local:   http://localhost:8000"
+if [[ -n "$LAN_IP" ]]; then
+    echo "📱 [OK] Acesso Celular:  http://$LAN_IP:8000"
+    echo "   (Abra no navegador do celular e adicione à Tela Inicial como PWA)"
+fi
 echo "========================================================="
+echo "   Pressione Ctrl+C para encerrar."
 
 exec "$UVICORN_BIN" api.app:app --host 0.0.0.0 --port 8000 --reload
