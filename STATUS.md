@@ -2,20 +2,25 @@
 
 > Documento de progresso. Lê-se de cima pra baixo: o que é o projeto,
 > como está organizado, o que já foi feito, e o que ainda falta.
-> Última atualização: 2026-09-14 · 404 testes em ~4-8s (100% de aprovação).
+> Última atualização: 2026-09-14 · 411 testes em ~4.1s (100% de aprovação).
 
 ---
 
 ## 0. Atualizações recentes
 
-### Sessão 2026-09-14 (Conclave & Tornado Protocol — Ajuste Monumental)
+### Sessão 2026-09-14 (Conclave & Tornado Protocol — Execução das Sequências Matadoras)
 
-- **Fast-Path no `crop_refinador.py` (300s ➔ 15s)**: Se a análise global do Claude Sonnet já forneceu `bbox_normalizada` com confiança $\ge 0.70$, o recorte final com matting e spotlight é aplicado diretamente sem disparar dezenas de chamadas externas de Claude redundantes. Cobertura de `crop_refinador.py` saltou de 14% para 68%.
-- **Auto-Reconciliação no Boot (`api/app.py`)**: Rotina `_reconciliar_jobs_orfaos()` no `lifespan` do FastAPI detecta jobs congelados em `processando` ou `pendente` após reinício do servidor e os transita para `erro`, destravando o banco e a interface.
+- **Push Soberano para GitHub Realizado**: Todos os 31 commits acumulados enviados com sucesso para `origin/main` (`git@github.com:frangola88/arena01.git`), acionando o CI no GitHub Actions.
+- **Inbox Watcher Daemon Criado (`scripts/inbox_watcher.py`)**: Ingestão zero-click de fotos e vídeos via monitoramento contínuo de `storage/inbox/`, com mapeamento automático de localização por subpasta.
+- **7 Novos Testes Unitários (`tests/test_inbox_watcher.py`)**: Suite de testes elevada para **411 testes** com 100% de aprovação.
+- **Captura Móvel com Câmera Direta**: Botão "Tirar Foto com a Câmera" (`capture="environment"`) integrado ao frontend Pro v4.0.
+- **Script de Inicialização Pro (`casaiq_start.sh`)**: Detecção automática do IP de rede local (`http://192.168.0.159:8000`) para acesso imediato via smartphone/PWA, com gestão integrada do daemon inbox.
+- **Backup Diário no Crontab Ativado**: Agendamento automático às 02:00 (`scripts/backup_db.sh`) com rotação de 30 dias.
+- **Fast-Path no `crop_refinador.py` (300s ➔ 15s)**: Se a análise global já forneceu `bbox_normalizada` com confiança $\ge 0.70$, o recorte final é aplicado diretamente sem disparar chamadas redundantes.
+- **Auto-Reconciliação no Boot (`api/app.py`)**: Rotina `_reconciliar_jobs_orfaos()` no `lifespan` do FastAPI detecta jobs congelados e os transita para `erro`.
 - **Endpoint de Reprocessamento (`POST /api/fotos/{id}/reprocessar`)**: Permite re-enfileirar fotos com falha limpando dados parciais.
-- **Tipagem Estrita nos Endpoints Batch**: `BatchDeleteRequest` e `BatchMoveRequest` integrados com validação Pydantic no `api/routes/objetos.py`.
-- **Suporte Mobile PWA**: Manifesto `web/manifest.json` criado, tags mobile no `web/index.html` e parsing de JSON no polling de progresso em `web/app.js`.
-- **404 testes** passando com 100% de sucesso.
+- **Tipagem Estrita nos Endpoints Batch**: `BatchDeleteRequest` e `BatchMoveRequest` integrados com Pydantic.
+- **Suporte Mobile PWA**: `manifest.json`, viewport adaptativo e tags mobile completas.
 
 ### Sessão 2026-08-24 (Justice League Trinity Protocol 2.0)
 
